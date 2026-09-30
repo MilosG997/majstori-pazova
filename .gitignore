@@ -1,0 +1,16 @@
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editori
+.vscode/
+.idea/
+
+# Alati (za kasnije)
+node_modules/
+.firebase/
+.netlify/
+*.log
+.env
+.env.*

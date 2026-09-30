@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Majstori Pazova</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4;--card:#FFFFFF;--text:#1A2233;--muted:#5B6477;--line:#D8DDE5;
+  --head:#16264A;--headText:#FFFFFF;--yellow:#F2C230;--yellowInk:#3A2C00;--green:#1E8A4E;--star:#E0A800;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1422;--card:#172036;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230;
+}}
+:root[data-theme="dark"]{--bg:#0E1422;--card:#172036;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg)}
+
+.top{background:var(--head);color:var(--headText);padding:20px 18px 0;position:relative}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:42px;height:42px;border-radius:10px;background:var(--yellow);display:grid;place-items:center;flex:none}
+.mark svg{width:24px;height:24px;stroke:var(--head)}
+.brand h1{margin:0;font-size:1.55rem;font-weight:800;font-stretch:112%;letter-spacing:-.01em;line-height:1.05}
+.brand p{margin:2px 0 0;font-size:.85rem;opacity:.75}
+.controls{display:grid;gap:10px;margin-top:18px;padding-bottom:18px}
+.field{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:0 12px;height:46px}
+.field svg{width:18px;height:18px;stroke:currentColor;opacity:.7;flex:none}
+.field input,.field select{flex:1;min-width:0;background:transparent;border:0;outline:0;height:100%;color:var(--headText);font-size:1rem}
+.field select option{color:#1A2233}
+.field input::placeholder{color:rgba(255,255,255,.6)}
+.ruler{height:14px;background:var(--yellow);
+  background-image:repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 10px),repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 50px);
+  background-size:100% 5px,100% 9px;background-repeat:no-repeat;background-position:0 0,0 0}
+
+.note{margin:14px 18px 0;font-size:.8rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.note b{background:var(--yellow);color:var(--yellowInk);padding:1px 6px;border-radius:4px;font-weight:700;font-size:.72rem}
+
+main{padding:14px 18px 40px}
+h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{display:flex;flex-direction:column;align-items:flex-start;gap:14px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:118px}
+.cat .ic{width:40px;height:40px;border-radius:10px;background:var(--head);display:grid;place-items:center}
+.cat .ic svg{width:22px;height:22px;stroke:var(--yellow)}
+.cat strong{display:block;font-size:1.02rem;font-weight:700;line-height:1.15}
+.cat span{font-size:.8rem;color:var(--muted)}
+.cat:active{transform:scale(.98)}
+
+.bar{display:flex;align-items:center;gap:6px;padding:14px 12px;background:var(--head);color:var(--headText);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.back{display:inline-flex;align-items:center;gap:4px;background:transparent;border:0;color:var(--headText);padding:8px 8px;border-radius:8px;font-weight:600}
+.back svg{width:20px;height:20px;stroke:currentColor}
+.bar .t{font-weight:800;font-stretch:108%;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.list{display:grid;gap:10px}
+.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 12px 14px}
+.item .info{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0}
+.item .name{font-weight:700;font-size:1.02rem}
+.item .meta{font-size:.82rem;color:var(--muted);margin-top:2px}
+.top1{display:inline-block;margin-top:6px;font-size:.72rem;font-weight:700;background:var(--yellow);color:var(--yellowInk);padding:2px 7px;border-radius:5px}
+.stars{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:.9rem;margin-top:4px}
+.stars i{font-style:normal;color:var(--star);letter-spacing:1px}
+.stars small{color:var(--muted);font-weight:500}
+.call{flex:none;width:52px;height:52px;border-radius:50%;background:var(--green);border:0;display:grid;place-items:center}
+.call svg{width:24px;height:24px;stroke:#fff}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+
+.prof{background:var(--head);color:var(--headText);padding:6px 18px 22px}
+.prof h1{margin:0;font-size:1.8rem;font-weight:800;font-stretch:112%;line-height:1.1}
+.prof .kat{display:inline-block;margin-top:8px;background:var(--yellow);color:var(--yellowInk);font-weight:700;font-size:.8rem;padding:3px 8px;border-radius:5px}
+.big{display:flex;align-items:baseline;gap:10px;margin-top:16px}
+.big b{font-size:2.6rem;font-weight:800;font-stretch:115%;line-height:1}
+.big i{font-style:normal;color:var(--yellow);font-size:1.2rem;letter-spacing:2px}
+.big small{opacity:.75}
+.facts{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:.92rem}
+.facts li{display:flex;gap:8px}
+.facts span{opacity:.7;min-width:92px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 18px 0}
+.btn{height:52px;border-radius:12px;border:0;font-weight:700;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn svg{width:20px;height:20px;stroke:currentColor}
+.btn.green{background:var(--green);color:#fff}
+.btn.ghost{background:var(--card);border:1.5px solid var(--text);color:var(--text)}
+.btn.yellow{background:var(--yellow);color:var(--yellowInk);width:100%}
+.phone{padding:10px 18px 0;font-size:.85rem;color:var(--muted)}
+
+.sec{padding:22px 18px 0}
+.tags{display:grid;gap:10px}
+.tagrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:.9rem}
+.meter{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter div{height:100%;background:var(--green)}
+.rev{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.rev .h{display:flex;justify-content:space-between;gap:8px;font-size:.88rem}
+.rev .h b{font-weight:700}
+.rev .h span{color:var(--muted)}
+.rev .s{color:var(--star);letter-spacing:1px;margin:4px 0}
+.rev p{margin:4px 0 0}
+.rev .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:.75rem;border:1px solid var(--line);border-radius:20px;padding:2px 9px;color:var(--muted)}
+.mine{border-color:var(--green)}
+
+.foot{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
+.foot p{margin:0;flex:1;font-size:.9rem}
+.foot p b{display:block;font-size:1rem}
+.foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
+
+.sheetBg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto}
+.open .sheetBg{display:block}
+.open .sheet{transform:none}
+.sheet h3{margin:0 0 4px;font-size:1.2rem;font-weight:800;font-stretch:108%}
+.sheet .sub{margin:0 0 14px;color:var(--muted);font-size:.9rem}
+.pick{display:flex;gap:6px;margin-bottom:6px}
+.pick button{width:48px;height:48px;border-radius:10px;border:1.5px solid var(--line);background:transparent;font-size:1.5rem;color:var(--line);line-height:1}
+.pick button.on{color:var(--star);border-color:var(--star)}
+.pickLbl{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-bottom:14px}
+.toggles{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.toggles button{border:1.5px solid var(--line);background:transparent;border-radius:20px;padding:8px 12px;font-size:.88rem}
+.toggles button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.sheet label{display:block;font-size:.85rem;font-weight:600;margin:0 0 6px}
+.sheet textarea,.sheet input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin-bottom:12px;font-size:1rem}
+.sheet textarea{min-height:90px;resize:vertical}
+.err{color:#C0392B;font-size:.85rem;min-height:1.2em;margin:-4px 0 8px}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="sheetBg" id="sheetBg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const IC={
+ struja:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+ voda:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
+ krecenje:'<path d="M4 4h13v5H4z"/><path d="M17 6.5h3v5.5h-8v3"/><path d="M11 15h2v6h-2z"/>',
+ keramika:'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>',
+ stolar:'<path d="M3 17 17 3l4 4L7 21H3z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>',
+ tesar:'<path d="M2 20 12 4l10 16z"/><path d="M12 4v16M7 12h10"/>',
+ teski:'<path d="M3 5h18v14H3z"/><path d="M3 10h18M3 15h18M9 5v5M15 10v5M9 15v4"/>',
+ klima:'<path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17"/>',
+ bravar:'<path d="M6 11h12v10H6z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+ krov:'<path d="M3 12 12 4l9 8"/><path d="M5 10v10h14V10"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+ pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+ back:'<path d="M15 5 8 12l7 7"/>',
+ phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+ star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'
+};
+const svg=(k)=>`<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+
+const MESTA=["Stara Pazova","Nova Pazova","Novi Banovci","Stari Banovci","Banovci-Dunav","Belegiš","Surduk","Golubinci","Vojka","Krnješevci"];
+const KAT=[
+ {id:'struja',n:'Struja',s:'Električar'},
+ {id:'voda',n:'Voda',s:'Vodoinstalater'},
+ {id:'krecenje',n:'Krečenje',s:'Moler, farbar'},
+ {id:'keramika',n:'Keramika',s:'Keramičar'},
+ {id:'stolar',n:'Stolarija',s:'Stolar'},
+ {id:'tesar',n:'Tesarski radovi',s:'Tesar'},
+ {id:'teski',n:'Teški radovi',s:'Iskop, rušenje, beton'},
+ {id:'klima',n:'Klima i grejanje',s:'Serviser'},
+ {id:'bravar',n:'Bravarija',s:'Bravar'},
+ {id:'krov',n:'Krovovi',s:'Krovopokrivač'}
+];
+const M=[
+ {id:1,n:'Dragan Ilić',k:'struja',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:18,o:'Kućne instalacije, razvodne table, interfoni i rasveta.',t:'64',x:[5,5,4,5,5]},
+ {id:2,n:'Miloš Stojanović',k:'struja',r:['Stara Pazova','Golubinci','Vojka'],g:9,o:'Popravke kvarova, zamena utičnica i prekidača, hitne intervencije.',t:'63',x:[5,4,4]},
+ {id:3,n:'Nenad Jovanović',k:'struja',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:22,o:'Nove instalacije u novogradnji, gromobrani.',t:'65',x:[4,5,3,4]},
+ {id:4,n:'Zoran Marković',k:'voda',r:['Stara Pazova','Nova Pazova'],g:15,o:'Kupatila, bojleri, odgušenje odvoda.',t:'64',x:[5,5,5,4,5,5]},
+ {id:5,n:'Goran Petrović',k:'voda',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:11,o:'Vodovod i kanalizacija, priključci, curenja.',t:'62',x:[4,4,5]},
+ {id:6,n:'Saša Nikolić',k:'voda',r:['Golubinci','Stara Pazova','Krnješevci'],g:7,o:'Zamena baterija, vodokotlića i ventila.',t:'60',x:[5,3,4]},
+ {id:7,n:'Branko Đurić',k:'voda',r:['Belegiš','Surduk','Stari Banovci'],g:25,o:'Bunari, pumpe i hidrofori.',t:'64',x:[5,5]},
+ {id:8,n:'Dejan Pavlović',k:'krecenje',r:['Stara Pazova','Nova Pazova','Golubinci'],g:14,o:'Krečenje stanova i kuća, gletovanje, dekorativne tehnike.',t:'63',x:[5,5,4,5]},
+ {id:9,n:'Ivan Kovačević',k:'krecenje',r:['Nova Pazova','Novi Banovci'],g:6,o:'Brzo krečenje, farbanje stolarije i ograda.',t:'61',x:[4,4,3]},
+ {id:10,n:'Marko Lazić',k:'krecenje',r:['Vojka','Krnješevci','Stara Pazova'],g:10,o:'Fasade i unutrašnji radovi.',t:'65',x:[5,4]},
+ {id:11,n:'Aleksandar Todorović',k:'krecenje',r:['Stari Banovci','Banovci-Dunav','Belegiš'],g:19,o:'Gips, spušteni plafoni, krečenje.',t:'64',x:[4,5,5]},
+ {id:12,n:'Stevan Radić',k:'keramika',r:['Krnješevci','Vojka','Stara Pazova'],g:21,o:'Kupatila i kuhinje, podno grejanje pod pločice.',t:'63',x:[5,5,5,5]},
+ {id:13,n:'Milan Popović',k:'keramika',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:12,o:'Pločice, granitna keramika, terase.',t:'60',x:[4,4,5]},
+ {id:14,n:'Vladimir Savić',k:'keramika',r:['Stara Pazova','Golubinci'],g:8,o:'Manje popravke i zamena pločica.',t:'62',x:[4,3]},
+ {id:15,n:'Jovan Mitrović',k:'stolar',r:['Surduk','Belegiš','Stari Banovci'],g:30,o:'Kuhinje i plakari po meri, masivno drvo.',t:'64',x:[5,5,5]},
+ {id:16,n:'Predrag Živković',k:'stolar',r:['Stara Pazova','Nova Pazova','Vojka'],g:13,o:'Vrata, prozori, popravke nameštaja.',t:'65',x:[4,5,4]},
+ {id:17,n:'Slobodan Ristić',k:'tesar',r:['Belegiš','Surduk','Banovci-Dunav'],g:27,o:'Krovne konstrukcije, nadstrešnice, oplate.',t:'63',x:[5,4,5]},
+ {id:18,n:'Dušan Babić',k:'tesar',r:['Banovci-Dunav','Novi Banovci','Nova Pazova'],g:16,o:'Drvene terase, sojenice, pergole.',t:'61',x:[4,4]},
+ {id:19,n:'Radovan Stanković',k:'teski',r:['Golubinci','Stara Pazova','Krnješevci'],g:20,o:'Iskopi, rušenje, betoniranje, odvoz šuta.',t:'64',x:[5,4,4,5]},
+ {id:20,n:'Nikola Vasić',k:'teski',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:5,o:'Utovar, istovar, čišćenje placa, ručni iskop.',t:'62',x:[4,5]},
+ {id:21,n:'Željko Obradović',k:'teski',r:['Vojka','Krnješevci','Golubinci'],g:17,o:'Temelji, ploče, zidanje.',t:'60',x:[5,5,4]},
+ {id:22,n:'Bojan Tomić',k:'klima',r:['Stara Pazova','Nova Pazova','Golubinci'],g:10,o:'Ugradnja i servis klima uređaja, toplotne pumpe.',t:'63',x:[5,5,4,5]},
+ {id:23,n:'Uroš Filipović',k:'klima',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:8,o:'Radijatori, kotlovi, servis gasnih peći.',t:'65',x:[4,3,4]},
+ {id:24,n:'Mladen Cvetković',k:'bravar',r:['Krnješevci','Vojka','Stara Pazova'],g:23,o:'Ograde, kapije, rešetke, nadstrešnice.',t:'64',x:[5,4,5]},
+ {id:25,n:'Petar Janković',k:'bravar',r:['Stara Pazova','Nova Pazova'],g:9,o:'Zamena brava, otključavanje, sigurnosna vrata.',t:'62',x:[5,5]},
+ {id:26,n:'Srđan Milošević',k:'krov',r:['Surduk','Belegiš','Stari Banovci'],g:24,o:'Crep, lim, oluci, sanacija prokišnjavanja.',t:'63',x:[5,4,5]},
+ {id:27,n:'Vlada Kostić',k:'krov',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:11,o:'Hidroizolacija ravnih krovova, oluci.',t:'61',x:[4,4,5]}
+];
+const POOL={
+ 5:["Došao isti dan i sve uradio kako treba.","Pošten čovek, cena ista kao što je rekao.","Radi čisto i uredno, preporuka svima.","Brzo i kvalitetno, zvaću ga opet.","Sve objasnio pre nego što je počeo, nema iznenađenja."],
+ 4:["Dobar posao, kasnio pola sata ali se javio.","Sve u redu, malo skuplji od drugih.","Kvalitetno, ali sam čekao par dana na termin."],
+ 3:["Posao urađen, ali je ostavio nered.","Solidno, nije se držao dogovorenog termina."]
+};
+const LJUDI=["Jelena M.","Stefan P.","Milica R.","Bojana K.","Nemanja S.","Ana T.","Vesna D.","Luka J.","Marija V.","Igor B."];
+const KAD=["pre 3 dana","pre nedelju dana","pre 2 nedelje","pre mesec dana","pre 2 meseca","pre 4 meseca"];
+const TAGOVI=["Stigao na vreme","Cena kao dogovorena","Čisto i uredno"];
+
+let mine={};try{mine=JSON.parse(localStorage.getItem('mp_ocene')||'{}')||{}}catch(e){mine={}}
+let mesto='';try{mesto=localStorage.getItem('mp_mesto')||''}catch(e){}
+let upit='';
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function seeded(m){return m.x.map((r,j)=>{const p=POOL[r];const i=m.id*7+j*3;
+  const tg=r>=5?TAGOVI.filter((_,q)=>(i+q)%3!==2):r===4?[TAGOVI[(i)%3]]:[];
+  return{r,c:p[i%p.length],a:LJUDI[i%LJUDI.length],d:KAD[(j+m.id)%KAD.length],tg}})}
+const revs=m=>[...(mine[m.id]||[]),...seeded(m)];
+function avg(m){const r=revs(m);return r.reduce((s,x)=>s+x.r,0)/r.length}
+const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
+const fmt=a=>a.toFixed(1).replace('.',',');
+const kat=id=>KAT.find(k=>k.id===id);
+const uMestu=m=>!mesto||m.r.includes(mesto);
+const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
+
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('show'),3200)}
+function pozovi(id){const m=M.find(x=>x.id===id);toast(`U pravoj aplikaciji ovde se odmah otvara poziv ka ${m.n}. U prototipu su brojevi izmišljeni.`)}
+
+function item(m,i){const a=avg(m),n=revs(m).length;
+ return `<div class="item"><button class="info" onclick="location.hash='#/m/${m.id}'">
+  <div class="name">${esc(m.n)}</div>
+  <div class="meta">${esc(m.r[0])}${m.r.length>1?' i okolina':''}, ${m.g} god. iskustva</div>
+  <div class="stars"><i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small></div>
+  ${i===0&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
+ </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi(${m.id})">${svg('phone')}</button></div>`}
+
+function home(){
+ const q=upit.trim().toLowerCase();
+ let body;
+ if(q){
+  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort((a,b)=>avg(b)-avg(a));
+  body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map((m,i)=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
+ }else{
+  body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
+   return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
+   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="toast('U pravoj aplikaciji ovde majstor ostavlja podatke i daje saglasnost za objavu broja.')">Upiši se</button></div>`;
+ }
+ app.innerHTML=`<header class="top">
+  <div class="brand"><div class="mark">${svg('teski')}</div><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
+  <div class="controls">
+   <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option ${x===mesto?'selected':''}>${x}</option>`).join('')}</select></label>
+   <label class="field">${svg('search')}<input id="q" type="search" placeholder="Traži majstora ili posao, npr. bojler" value="${esc(upit)}" aria-label="Pretraga"></label>
+  </div></header><div class="ruler"></div>
+  <div class="note"><b>Prototip</b> Majstori, ocene i brojevi su izmišljeni.</div>
+  <main>${body}</main>`;
+ document.getElementById('mesto').onchange=e=>{mesto=e.target.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}render()};
+ const qi=document.getElementById('q');qi.oninput=e=>{upit=e.target.value;const pos=qi.selectionStart;home();const n=document.getElementById('q');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}};
+}
+
+function kategorija(id){const k=kat(id);if(!k)return home();
+ const list=M.filter(m=>m.k===id&&uMestu(m)).sort((a,b)=>avg(b)-avg(a));
+ app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">${k.n}</div></div>
+ <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
+ ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora za ${k.n.toLowerCase()} u mestu ${esc(mesto)}. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.</div>`}
+ </main>`;scrollTo(0,0)}
+
+function profil(id){const m=M.find(x=>x.id==id);if(!m)return home();
+ const r=revs(m),a=avg(m),k=kat(m.k);
+ const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg&&x.tg.includes(t)).length}));
+ app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
+ <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
+  <div class="big"><b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small></div>
+  <ul class="facts"><li><span>Radi u</span>${m.r.join(', ')}</li><li><span>Iskustvo</span>${m.g} godina</li><li><span>Radi</span>${esc(m.o)}</li></ul>
+ </section>
+ <div class="actions"><button class="btn green" onclick="pozovi(${m.id})">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni(${m.id})">${svg('star')}Oceni</button></div>
+ <div class="phone">Telefon: 0${m.t} ••• ••${String(m.id).padStart(2,'0')}</div>
+ <div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>
+ <div class="sec"><h2>Recenzije</h2>${r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${esc(x.d)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg&&x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${t}</span>`).join('')}</div>`:''}</div>`).join('')}</div>
+ <div style="height:40px"></div>`;scrollTo(0,0)}
+
+const OPIS=['','Loše','Slabo','Solidno','Dobro','Odlično'];
+function oceni(id){const m=M.find(x=>x.id===id);let z=0;const tg=new Set();
+ const sh=document.getElementById('sheet');
+ sh.innerHTML=`<h3 id="sheetTitle">Oceni: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora.</p>
+ <div class="pick" id="pick">${[1,2,3,4,5].map(i=>`<button aria-label="${i} od 5" data-v="${i}">★</button>`).join('')}</div><div class="pickLbl" id="pl">Izaberi broj zvezdica</div>
+ <div class="toggles">${TAGOVI.map(t=>`<button aria-pressed="false" data-t="${t}">${t}</button>`).join('')}</div>
+ <label for="kom">Komentar</label><textarea id="kom" placeholder="Kako je prošao posao?"></textarea>
+ <label for="ime">Ime</label><input id="ime" placeholder="npr. Marko P." maxlength="30">
+ <div class="err" id="err"></div>
+ <button class="btn yellow" id="save">Sačuvaj ocenu</button>`;
+ sh.querySelectorAll('#pick button').forEach(b=>b.onclick=()=>{z=+b.dataset.v;sh.querySelectorAll('#pick button').forEach(x=>x.classList.toggle('on',+x.dataset.v<=z));document.getElementById('pl').textContent=OPIS[z];document.getElementById('err').textContent=''});
+ sh.querySelectorAll('.toggles button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;tg.has(t)?tg.delete(t):tg.add(t);b.setAttribute('aria-pressed',tg.has(t))});
+ document.getElementById('save').onclick=()=>{
+  if(!z){document.getElementById('err').textContent='Izaberi ocenu od 1 do 5 zvezdica.';return}
+  const rv={r:z,c:document.getElementById('kom').value.trim(),a:document.getElementById('ime').value.trim()||'Anonimno',d:'upravo',tg:[...tg],mine:true};
+  (mine[id]=mine[id]||[]).unshift(rv);try{localStorage.setItem('mp_ocene',JSON.stringify(mine))}catch(_){}
+  zatvori();profil(id);toast('Ocena sačuvana. Prosek majstora je ažuriran.')};
+ document.body.classList.add('open');setTimeout(()=>sh.querySelector('#pick button').focus(),50)}
+function zatvori(){document.body.classList.remove('open')}
+document.getElementById('sheetBg').onclick=zatvori;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
+
+const app=document.getElementById('app');
+function render(){zatvori();const h=location.hash;let p;
+ if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1]);
+ else if((p=h.match(/^#\/m\/(\d+)/)))profil(+p[1]);
+ else home()}
+addEventListener('hashchange',render);render();
+</script>
+</body>
+</html>

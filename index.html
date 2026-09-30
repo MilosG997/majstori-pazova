@@ -41,8 +41,10 @@ button{cursor:pointer}
   background-image:repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 10px),repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 50px);
   background-size:100% 5px,100% 9px;background-repeat:no-repeat;background-position:0 0,0 0}
 
-.note{margin:14px 18px 0;font-size:.8rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.note{margin:14px 18px 0;font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .note b{background:var(--yellow);color:var(--yellowInk);padding:1px 6px;border-radius:4px;font-weight:700;font-size:.72rem}
+.acct{margin-left:auto;display:inline-flex;gap:6px;align-items:center}
+.lnk{background:none;border:0;padding:4px 0;color:var(--text);font-weight:600;text-decoration:underline;text-underline-offset:2px;font-size:inherit}
 
 main{padding:14px 18px 40px}
 h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
@@ -88,6 +90,8 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .btn.green{background:var(--green);color:#fff}
 .btn.ghost{background:var(--card);border:1.5px solid var(--text);color:var(--text)}
 .btn.yellow{background:var(--yellow);color:var(--yellowInk);width:100%}
+.btn.del{background:transparent;color:#C0392B;width:100%;height:44px;margin-top:8px}
+.btn:disabled{opacity:.6;cursor:wait}
 .phone{padding:10px 18px 0;font-size:.85rem;color:var(--muted)}
 
 .sec{padding:22px 18px 0}
@@ -109,6 +113,7 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .foot p{margin:0;flex:1;font-size:.9rem}
 .foot p b{display:block;font-size:1rem}
 .foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
+.adm{margin-top:14px}
 
 .sheetBg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;z-index:20}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto}
@@ -139,7 +144,28 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {getFirestore,collection,collectionGroup,doc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+// Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
+const firebaseConfig={
+ apiKey:"AIzaSyBHneYMR4ycYX-TMrVJlZKivhDC720GuuA",
+ authDomain:"majstori-pazova.firebaseapp.com",
+ projectId:"majstori-pazova",
+ storageBucket:"majstori-pazova.firebasestorage.app",
+ messagingSenderId:"156957254098",
+ appId:"1:156957254098:web:6ec9d2a15a06af84f7680b"
+};
+const ADMIN_EMAIL='milosnpcz97@gmail.com';
+const fb=initializeApp(firebaseConfig);
+const auth=getAuth(fb);
+const db=getFirestore(fb);
+
+const app=document.getElementById('app');
+const sh=document.getElementById('sheet');
+
 const IC={
  struja:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
  voda:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
@@ -172,77 +198,122 @@ const KAT=[
  {id:'bravar',n:'Bravarija',s:'Bravar'},
  {id:'krov',n:'Krovovi',s:'Krovopokrivač'}
 ];
-const M=[
- {id:1,n:'Dragan Ilić',k:'struja',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:18,o:'Kućne instalacije, razvodne table, interfoni i rasveta.',t:'64',x:[5,5,4,5,5]},
- {id:2,n:'Miloš Stojanović',k:'struja',r:['Stara Pazova','Golubinci','Vojka'],g:9,o:'Popravke kvarova, zamena utičnica i prekidača, hitne intervencije.',t:'63',x:[5,4,4]},
- {id:3,n:'Nenad Jovanović',k:'struja',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:22,o:'Nove instalacije u novogradnji, gromobrani.',t:'65',x:[4,5,3,4]},
- {id:4,n:'Zoran Marković',k:'voda',r:['Stara Pazova','Nova Pazova'],g:15,o:'Kupatila, bojleri, odgušenje odvoda.',t:'64',x:[5,5,5,4,5,5]},
- {id:5,n:'Goran Petrović',k:'voda',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:11,o:'Vodovod i kanalizacija, priključci, curenja.',t:'62',x:[4,4,5]},
- {id:6,n:'Saša Nikolić',k:'voda',r:['Golubinci','Stara Pazova','Krnješevci'],g:7,o:'Zamena baterija, vodokotlića i ventila.',t:'60',x:[5,3,4]},
- {id:7,n:'Branko Đurić',k:'voda',r:['Belegiš','Surduk','Stari Banovci'],g:25,o:'Bunari, pumpe i hidrofori.',t:'64',x:[5,5]},
- {id:8,n:'Dejan Pavlović',k:'krecenje',r:['Stara Pazova','Nova Pazova','Golubinci'],g:14,o:'Krečenje stanova i kuća, gletovanje, dekorativne tehnike.',t:'63',x:[5,5,4,5]},
- {id:9,n:'Ivan Kovačević',k:'krecenje',r:['Nova Pazova','Novi Banovci'],g:6,o:'Brzo krečenje, farbanje stolarije i ograda.',t:'61',x:[4,4,3]},
- {id:10,n:'Marko Lazić',k:'krecenje',r:['Vojka','Krnješevci','Stara Pazova'],g:10,o:'Fasade i unutrašnji radovi.',t:'65',x:[5,4]},
- {id:11,n:'Aleksandar Todorović',k:'krecenje',r:['Stari Banovci','Banovci-Dunav','Belegiš'],g:19,o:'Gips, spušteni plafoni, krečenje.',t:'64',x:[4,5,5]},
- {id:12,n:'Stevan Radić',k:'keramika',r:['Krnješevci','Vojka','Stara Pazova'],g:21,o:'Kupatila i kuhinje, podno grejanje pod pločice.',t:'63',x:[5,5,5,5]},
- {id:13,n:'Milan Popović',k:'keramika',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:12,o:'Pločice, granitna keramika, terase.',t:'60',x:[4,4,5]},
- {id:14,n:'Vladimir Savić',k:'keramika',r:['Stara Pazova','Golubinci'],g:8,o:'Manje popravke i zamena pločica.',t:'62',x:[4,3]},
- {id:15,n:'Jovan Mitrović',k:'stolar',r:['Surduk','Belegiš','Stari Banovci'],g:30,o:'Kuhinje i plakari po meri, masivno drvo.',t:'64',x:[5,5,5]},
- {id:16,n:'Predrag Živković',k:'stolar',r:['Stara Pazova','Nova Pazova','Vojka'],g:13,o:'Vrata, prozori, popravke nameštaja.',t:'65',x:[4,5,4]},
- {id:17,n:'Slobodan Ristić',k:'tesar',r:['Belegiš','Surduk','Banovci-Dunav'],g:27,o:'Krovne konstrukcije, nadstrešnice, oplate.',t:'63',x:[5,4,5]},
- {id:18,n:'Dušan Babić',k:'tesar',r:['Banovci-Dunav','Novi Banovci','Nova Pazova'],g:16,o:'Drvene terase, sojenice, pergole.',t:'61',x:[4,4]},
- {id:19,n:'Radovan Stanković',k:'teski',r:['Golubinci','Stara Pazova','Krnješevci'],g:20,o:'Iskopi, rušenje, betoniranje, odvoz šuta.',t:'64',x:[5,4,4,5]},
- {id:20,n:'Nikola Vasić',k:'teski',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:5,o:'Utovar, istovar, čišćenje placa, ručni iskop.',t:'62',x:[4,5]},
- {id:21,n:'Željko Obradović',k:'teski',r:['Vojka','Krnješevci','Golubinci'],g:17,o:'Temelji, ploče, zidanje.',t:'60',x:[5,5,4]},
- {id:22,n:'Bojan Tomić',k:'klima',r:['Stara Pazova','Nova Pazova','Golubinci'],g:10,o:'Ugradnja i servis klima uređaja, toplotne pumpe.',t:'63',x:[5,5,4,5]},
- {id:23,n:'Uroš Filipović',k:'klima',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:8,o:'Radijatori, kotlovi, servis gasnih peći.',t:'65',x:[4,3,4]},
- {id:24,n:'Mladen Cvetković',k:'bravar',r:['Krnješevci','Vojka','Stara Pazova'],g:23,o:'Ograde, kapije, rešetke, nadstrešnice.',t:'64',x:[5,4,5]},
- {id:25,n:'Petar Janković',k:'bravar',r:['Stara Pazova','Nova Pazova'],g:9,o:'Zamena brava, otključavanje, sigurnosna vrata.',t:'62',x:[5,5]},
- {id:26,n:'Srđan Milošević',k:'krov',r:['Surduk','Belegiš','Stari Banovci'],g:24,o:'Crep, lim, oluci, sanacija prokišnjavanja.',t:'63',x:[5,4,5]},
- {id:27,n:'Vlada Kostić',k:'krov',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:11,o:'Hidroizolacija ravnih krovova, oluci.',t:'61',x:[4,4,5]}
+// Probni (izmišljeni) majstori; admin ih jednim klikom ubacuje u praznu bazu
+const SEED=[
+ {id:1,n:'Dragan Ilić',k:'struja',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:18,o:'Kućne instalacije, razvodne table, interfoni i rasveta.'},
+ {id:2,n:'Miloš Stojanović',k:'struja',r:['Stara Pazova','Golubinci','Vojka'],g:9,o:'Popravke kvarova, zamena utičnica i prekidača, hitne intervencije.'},
+ {id:3,n:'Nenad Jovanović',k:'struja',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:22,o:'Nove instalacije u novogradnji, gromobrani.'},
+ {id:4,n:'Zoran Marković',k:'voda',r:['Stara Pazova','Nova Pazova'],g:15,o:'Kupatila, bojleri, odgušenje odvoda.'},
+ {id:5,n:'Goran Petrović',k:'voda',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:11,o:'Vodovod i kanalizacija, priključci, curenja.'},
+ {id:6,n:'Saša Nikolić',k:'voda',r:['Golubinci','Stara Pazova','Krnješevci'],g:7,o:'Zamena baterija, vodokotlića i ventila.'},
+ {id:7,n:'Branko Đurić',k:'voda',r:['Belegiš','Surduk','Stari Banovci'],g:25,o:'Bunari, pumpe i hidrofori.'},
+ {id:8,n:'Dejan Pavlović',k:'krecenje',r:['Stara Pazova','Nova Pazova','Golubinci'],g:14,o:'Krečenje stanova i kuća, gletovanje, dekorativne tehnike.'},
+ {id:9,n:'Ivan Kovačević',k:'krecenje',r:['Nova Pazova','Novi Banovci'],g:6,o:'Brzo krečenje, farbanje stolarije i ograda.'},
+ {id:10,n:'Marko Lazić',k:'krecenje',r:['Vojka','Krnješevci','Stara Pazova'],g:10,o:'Fasade i unutrašnji radovi.'},
+ {id:11,n:'Aleksandar Todorović',k:'krecenje',r:['Stari Banovci','Banovci-Dunav','Belegiš'],g:19,o:'Gips, spušteni plafoni, krečenje.'},
+ {id:12,n:'Stevan Radić',k:'keramika',r:['Krnješevci','Vojka','Stara Pazova'],g:21,o:'Kupatila i kuhinje, podno grejanje pod pločice.'},
+ {id:13,n:'Milan Popović',k:'keramika',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:12,o:'Pločice, granitna keramika, terase.'},
+ {id:14,n:'Vladimir Savić',k:'keramika',r:['Stara Pazova','Golubinci'],g:8,o:'Manje popravke i zamena pločica.'},
+ {id:15,n:'Jovan Mitrović',k:'stolar',r:['Surduk','Belegiš','Stari Banovci'],g:30,o:'Kuhinje i plakari po meri, masivno drvo.'},
+ {id:16,n:'Predrag Živković',k:'stolar',r:['Stara Pazova','Nova Pazova','Vojka'],g:13,o:'Vrata, prozori, popravke nameštaja.'},
+ {id:17,n:'Slobodan Ristić',k:'tesar',r:['Belegiš','Surduk','Banovci-Dunav'],g:27,o:'Krovne konstrukcije, nadstrešnice, oplate.'},
+ {id:18,n:'Dušan Babić',k:'tesar',r:['Banovci-Dunav','Novi Banovci','Nova Pazova'],g:16,o:'Drvene terase, sojenice, pergole.'},
+ {id:19,n:'Radovan Stanković',k:'teski',r:['Golubinci','Stara Pazova','Krnješevci'],g:20,o:'Iskopi, rušenje, betoniranje, odvoz šuta.'},
+ {id:20,n:'Nikola Vasić',k:'teski',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:5,o:'Utovar, istovar, čišćenje placa, ručni iskop.'},
+ {id:21,n:'Željko Obradović',k:'teski',r:['Vojka','Krnješevci','Golubinci'],g:17,o:'Temelji, ploče, zidanje.'},
+ {id:22,n:'Bojan Tomić',k:'klima',r:['Stara Pazova','Nova Pazova','Golubinci'],g:10,o:'Ugradnja i servis klima uređaja, toplotne pumpe.'},
+ {id:23,n:'Uroš Filipović',k:'klima',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:8,o:'Radijatori, kotlovi, servis gasnih peći.'},
+ {id:24,n:'Mladen Cvetković',k:'bravar',r:['Krnješevci','Vojka','Stara Pazova'],g:23,o:'Ograde, kapije, rešetke, nadstrešnice.'},
+ {id:25,n:'Petar Janković',k:'bravar',r:['Stara Pazova','Nova Pazova'],g:9,o:'Zamena brava, otključavanje, sigurnosna vrata.'},
+ {id:26,n:'Srđan Milošević',k:'krov',r:['Surduk','Belegiš','Stari Banovci'],g:24,o:'Crep, lim, oluci, sanacija prokišnjavanja.'},
+ {id:27,n:'Vlada Kostić',k:'krov',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:11,o:'Hidroizolacija ravnih krovova, oluci.'}
 ];
-const POOL={
- 5:["Došao isti dan i sve uradio kako treba.","Pošten čovek, cena ista kao što je rekao.","Radi čisto i uredno, preporuka svima.","Brzo i kvalitetno, zvaću ga opet.","Sve objasnio pre nego što je počeo, nema iznenađenja."],
- 4:["Dobar posao, kasnio pola sata ali se javio.","Sve u redu, malo skuplji od drugih.","Kvalitetno, ali sam čekao par dana na termin."],
- 3:["Posao urađen, ali je ostavio nered.","Solidno, nije se držao dogovorenog termina."]
-};
-const LJUDI=["Jelena M.","Stefan P.","Milica R.","Bojana K.","Nemanja S.","Ana T.","Vesna D.","Luka J.","Marija V.","Igor B."];
-const KAD=["pre 3 dana","pre nedelju dana","pre 2 nedelje","pre mesec dana","pre 2 meseca","pre 4 meseca"];
 const TAGOVI=["Stigao na vreme","Cena kao dogovorena","Čisto i uredno"];
 
-let mine={};try{mine=JSON.parse(localStorage.getItem('mp_ocene')||'{}')||{}}catch(e){mine={}}
+let M=[];        // majstori iz baze
+let OC={};       // ocene po majstoru: {idMajstora:[...]}
+let user=null;
+let ucitano=false,greska='';
 let mesto='';try{mesto=localStorage.getItem('mp_mesto')||''}catch(e){}
 let upit='';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function seeded(m){return m.x.map((r,j)=>{const p=POOL[r];const i=m.id*7+j*3;
-  const tg=r>=5?TAGOVI.filter((_,q)=>(i+q)%3!==2):r===4?[TAGOVI[(i)%3]]:[];
-  return{r,c:p[i%p.length],a:LJUDI[i%LJUDI.length],d:KAD[(j+m.id)%KAD.length],tg}})}
-const revs=m=>[...(mine[m.id]||[]),...seeded(m)];
-function avg(m){const r=revs(m);return r.reduce((s,x)=>s+x.r,0)/r.length}
+const kat=id=>KAT.find(k=>k.id===id);
+const oceneOd=m=>OC[m.id]||[];
+const revs=m=>oceneOd(m).map(x=>({...x,mine:!!user&&x.uid===user.uid})).sort((a,b)=>(b.mine-a.mine)||(b.v-a.v));
+function avg(m){const r=oceneOd(m);return r.length?r.reduce((s,x)=>s+x.r,0)/r.length:0}
+const poOceni=(a,b)=>(avg(b)-avg(a))||(oceneOd(b).length-oceneOd(a).length)||a.n.localeCompare(b.n,'sr');
 const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
 const fmt=a=>a.toFixed(1).replace('.',',');
-const kat=id=>KAT.find(k=>k.id===id);
 const uMestu=m=>!mesto||m.r.includes(mesto);
 const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
+const jeAdmin=()=>!!user&&user.email===ADMIN_EMAIL&&user.emailVerified;
+const kratkoIme=n=>{const p=String(n||'').trim().split(/\s+/).filter(Boolean);return p.length?(p[0]+(p[1]?' '+p[1][0]+'.':'')).slice(0,30):''};
+function kad(v){const d=(Date.now()-v)/864e5;
+ if(d<1)return 'danas';if(d<2)return 'juče';if(d<7)return `pre ${Math.floor(d)} dana`;
+ if(d<30){const n=Math.floor(d/7);return n===1?'pre nedelju dana':`pre ${n} nedelje`}
+ if(d<365){const n=Math.floor(d/30);return n===1?'pre mesec dana':`pre ${n} ${n<5?'meseca':'meseci'}`}
+ const n=Math.floor(d/365);return n===1?'pre godinu dana':`pre ${n} ${n<5?'godine':'godina'}`}
 
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('show'),3200)}
-function pozovi(id){const m=M.find(x=>x.id===id);toast(`U pravoj aplikaciji ovde se odmah otvara poziv ka ${m.n}. U prototipu su brojevi izmišljeni.`)}
+function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
+ if(m.t)location.href='tel:'+m.t.replace(/[^\d+]/g,'');
+ else toast(`Broj telefona za ${m.n} još nije unet.`)}
 
-function item(m,i){const a=avg(m),n=revs(m).length;
+// ---------- Baza ----------
+onSnapshot(collection(db,'majstori'),s=>{
+ M=s.docs.map(d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan!==false}})
+  .filter(m=>m.a&&m.n&&kat(m.k));
+ ucitano=true;greska='';osvezi();
+},e=>{console.error(e);ucitano=true;
+ greska=e.code==='permission-denied'?'Baza je zaključana: pravila baze (firestore.rules) još nisu postavljena u Firebase konzoli.':'Ne mogu da učitam majstore. Proveri internet vezu i osveži stranu.';osvezi()});
+
+onSnapshot(collectionGroup(db,'ocene'),s=>{
+ const o={};
+ s.docs.forEach(d=>{const mid=d.ref.parent.parent.id;const x=d.data({serverTimestamps:'estimate'});
+  (o[mid]=o[mid]||[]).push({uid:d.id,r:x.ocena,c:String(x.komentar||''),a:String(x.ime||'Anonimno'),tg:Array.isArray(x.oznake)?x.oznake:[],v:x.vreme?x.vreme.toMillis():Date.now()})});
+ OC=o;osvezi();
+},e=>console.error(e));
+
+// ---------- Prijava ----------
+onAuthStateChanged(auth,u=>{user=u;osvezi()});
+async function prijava(){
+ try{await signInWithPopup(auth,new GoogleAuthProvider());return true}
+ catch(e){
+  if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request')return false;
+  console.error(e);
+  toast(e.code==='auth/popup-blocked'?'Pregledač je blokirao prozor za prijavu. Dozvoli iskačuće prozore i probaj ponovo.'
+   :e.code==='auth/unauthorized-domain'?'Ovaj sajt još nije dozvoljen u Firebase-u (Authorized domains).'
+   :'Prijava nije uspela. Probaj ponovo.');
+  return false}}
+async function odjava(){await signOut(auth);toast('Odjavljen si.')}
+const nalog=()=>`<span class="acct">${user?`${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
+
+async function ubaci(){
+ if(!confirm(`Ubaciti ${SEED.length} probnih majstora u bazu?`))return;
+ const b=writeBatch(db);
+ SEED.forEach(m=>b.set(doc(db,'majstori','m'+String(m.id).padStart(2,'0')),{ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:'',aktivan:true}));
+ try{await b.commit();toast('Majstori su ubačeni u bazu.')}
+ catch(e){console.error(e);toast('Ubacivanje nije uspelo. Proveri da li su pravila baze postavljena.')}}
+
+// ---------- Prikaz ----------
+function item(m,i){const a=avg(m),n=oceneOd(m).length;
  return `<div class="item"><button class="info" onclick="location.hash='#/m/${m.id}'">
   <div class="name">${esc(m.n)}</div>
-  <div class="meta">${esc(m.r[0])}${m.r.length>1?' i okolina':''}, ${m.g} god. iskustva</div>
-  <div class="stars"><i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small></div>
-  ${i===0&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
- </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi(${m.id})">${svg('phone')}</button></div>`}
+  <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}, ${m.g} god. iskustva</div>
+  <div class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</div>
+  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
+ </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
 
 function home(){
  const q=upit.trim().toLowerCase();
  let body;
- if(q){
-  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort((a,b)=>avg(b)-avg(a));
-  body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map((m,i)=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
+ if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
+ else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
+ else if(!M.length)body=`<div class="empty">Još nema majstora u bazi.</div>`+(jeAdmin()?`<div class="adm"><button class="btn yellow" onclick="ubaci()">Ubaci ${SEED.length} probnih majstora u bazu</button></div>`:'');
+ else if(q){
+  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort(poOceni);
+  body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
@@ -254,61 +325,88 @@ function home(){
    <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option ${x===mesto?'selected':''}>${x}</option>`).join('')}</select></label>
    <label class="field">${svg('search')}<input id="q" type="search" placeholder="Traži majstora ili posao, npr. bojler" value="${esc(upit)}" aria-label="Pretraga"></label>
   </div></header><div class="ruler"></div>
-  <div class="note"><b>Prototip</b> Majstori, ocene i brojevi su izmišljeni.</div>
+  <div class="note"><b>Prototip</b> Majstori i brojevi su izmišljeni. ${nalog()}</div>
   <main>${body}</main>`;
- document.getElementById('mesto').onchange=e=>{mesto=e.target.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}render()};
+ document.getElementById('mesto').onchange=e=>{mesto=e.target.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}osvezi()};
  const qi=document.getElementById('q');qi.oninput=e=>{upit=e.target.value;const pos=qi.selectionStart;home();const n=document.getElementById('q');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}};
 }
 
-function kategorija(id){const k=kat(id);if(!k)return home();
- const list=M.filter(m=>m.k===id&&uMestu(m)).sort((a,b)=>avg(b)-avg(a));
+const ucitavam=()=>{app.innerHTML=`<main><div class="empty">Učitavam…</div></main>`};
+
+function kategorija(id,nav){const k=kat(id);if(!k)return home();
+ if(!ucitano)return ucitavam();
+ const list=M.filter(m=>m.k===id&&uMestu(m)).sort(poOceni);
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">${k.n}</div></div>
  <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
- ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora za ${k.n.toLowerCase()} u mestu ${esc(mesto)}. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.</div>`}
- </main>`;scrollTo(0,0)}
+ ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora za ${k.n.toLowerCase()}${mesto?' u mestu '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
+ </main>`;if(nav)scrollTo(0,0)}
 
-function profil(id){const m=M.find(x=>x.id==id);if(!m)return home();
- const r=revs(m),a=avg(m),k=kat(m.k);
- const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg&&x.tg.includes(t)).length}));
+function profil(id,nav){const m=M.find(x=>x.id===id);
+ if(!m){if(!ucitano)return ucitavam();return home()}
+ const r=revs(m),a=avg(m),k=kat(m.k),moja=r.find(x=>x.mine);
+ const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg.includes(t)).length}));
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
  <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
-  <div class="big"><b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small></div>
-  <ul class="facts"><li><span>Radi u</span>${m.r.join(', ')}</li><li><span>Iskustvo</span>${m.g} godina</li><li><span>Radi</span>${esc(m.o)}</li></ul>
+  <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
+  <ul class="facts"><li><span>Radi u</span>${esc(m.r.join(', '))}</li><li><span>Iskustvo</span>${m.g} godina</li><li><span>Radi</span>${esc(m.o)}</li></ul>
  </section>
- <div class="actions"><button class="btn green" onclick="pozovi(${m.id})">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni(${m.id})">${svg('star')}Oceni</button></div>
- <div class="phone">Telefon: 0${m.t} ••• ••${String(m.id).padStart(2,'0')}</div>
- <div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>
- <div class="sec"><h2>Recenzije</h2>${r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${esc(x.d)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg&&x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${t}</span>`).join('')}</div>`:''}</div>`).join('')}</div>
- <div style="height:40px"></div>`;scrollTo(0,0)}
+ <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
+ <div class="phone">${m.t?'Telefon: '+esc(m.t):'Broj telefona još nije unet.'}</div>
+ ${r.length?`<div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>`:''}
+ <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}</div>`).join('')
+  :'<div class="empty">Još nema ocena. Budi prvi koji će oceniti ovog majstora.</div>'}</div>
+ <div style="height:40px"></div>`;if(nav)scrollTo(0,0)}
 
 const OPIS=['','Loše','Slabo','Solidno','Dobro','Odlično'];
-function oceni(id){const m=M.find(x=>x.id===id);let z=0;const tg=new Set();
- const sh=document.getElementById('sheet');
- sh.innerHTML=`<h3 id="sheetTitle">Oceni: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora.</p>
- <div class="pick" id="pick">${[1,2,3,4,5].map(i=>`<button aria-label="${i} od 5" data-v="${i}">★</button>`).join('')}</div><div class="pickLbl" id="pl">Izaberi broj zvezdica</div>
- <div class="toggles">${TAGOVI.map(t=>`<button aria-pressed="false" data-t="${t}">${t}</button>`).join('')}</div>
- <label for="kom">Komentar</label><textarea id="kom" placeholder="Kako je prošao posao?"></textarea>
- <label for="ime">Ime</label><input id="ime" placeholder="npr. Marko P." maxlength="30">
+async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
+ if(!user&&!(await prijava()))return;
+ const moja=oceneOd(m).find(x=>x.uid===user.uid);
+ let z=moja?moja.r:0;const tg=new Set(moja?moja.tg:[]);
+ sh.innerHTML=`<h3 id="sheetTitle">${moja?'Izmeni ocenu':'Oceni'}: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora. Vide je svi.</p>
+ <div class="pick" id="pick">${[1,2,3,4,5].map(i=>`<button aria-label="${i} od 5" data-v="${i}" class="${i<=z?'on':''}">★</button>`).join('')}</div><div class="pickLbl" id="pl">${z?OPIS[z]:'Izaberi broj zvezdica'}</div>
+ <div class="toggles">${TAGOVI.map(t=>`<button aria-pressed="${tg.has(t)}" data-t="${t}">${t}</button>`).join('')}</div>
+ <label for="kom">Komentar</label><textarea id="kom" maxlength="500" placeholder="Kako je prošao posao?">${moja?esc(moja.c):''}</textarea>
+ <label for="ime">Ime koje se prikazuje</label><input id="ime" placeholder="npr. Marko P." maxlength="30" value="${esc(moja?moja.a:kratkoIme(user.displayName))}">
  <div class="err" id="err"></div>
- <button class="btn yellow" id="save">Sačuvaj ocenu</button>`;
- sh.querySelectorAll('#pick button').forEach(b=>b.onclick=()=>{z=+b.dataset.v;sh.querySelectorAll('#pick button').forEach(x=>x.classList.toggle('on',+x.dataset.v<=z));document.getElementById('pl').textContent=OPIS[z];document.getElementById('err').textContent=''});
+ <button class="btn yellow" id="save">${moja?'Sačuvaj izmenu':'Sačuvaj ocenu'}</button>
+ ${moja?'<button class="btn del" id="del">Obriši moju ocenu</button>':''}`;
+ const err=document.getElementById('err'),save=document.getElementById('save');
+ sh.querySelectorAll('#pick button').forEach(b=>b.onclick=()=>{z=+b.dataset.v;sh.querySelectorAll('#pick button').forEach(x=>x.classList.toggle('on',+x.dataset.v<=z));document.getElementById('pl').textContent=OPIS[z];err.textContent=''});
  sh.querySelectorAll('.toggles button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;tg.has(t)?tg.delete(t):tg.add(t);b.setAttribute('aria-pressed',tg.has(t))});
- document.getElementById('save').onclick=()=>{
-  if(!z){document.getElementById('err').textContent='Izaberi ocenu od 1 do 5 zvezdica.';return}
-  const rv={r:z,c:document.getElementById('kom').value.trim(),a:document.getElementById('ime').value.trim()||'Anonimno',d:'upravo',tg:[...tg],mine:true};
-  (mine[id]=mine[id]||[]).unshift(rv);try{localStorage.setItem('mp_ocene',JSON.stringify(mine))}catch(_){}
-  zatvori();profil(id);toast('Ocena sačuvana. Prosek majstora je ažuriran.')};
+ save.onclick=async()=>{
+  if(!z){err.textContent='Izaberi ocenu od 1 do 5 zvezdica.';return}
+  const tekst=save.textContent;save.disabled=true;save.textContent='Čuvam…';
+  try{
+   await setDoc(doc(db,'majstori',id,'ocene',user.uid),{
+    ocena:z,komentar:document.getElementById('kom').value.trim().slice(0,500),
+    ime:(document.getElementById('ime').value.trim()||'Anonimno').slice(0,30),
+    oznake:TAGOVI.filter(t=>tg.has(t)),uid:user.uid,vreme:serverTimestamp()});
+   zatvori();toast(moja?'Ocena je izmenjena.':'Ocena je sačuvana. Vide je svi.')
+  }catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent=tekst}};
+ const del=document.getElementById('del');
+ if(del)del.onclick=async()=>{
+  if(!confirm('Obrisati tvoju ocenu za ovog majstora?'))return;
+  del.disabled=true;
+  try{await deleteDoc(doc(db,'majstori',id,'ocene',user.uid));zatvori();toast('Ocena je obrisana.')}
+  catch(e){console.error(e);err.textContent='Brisanje nije uspelo. Probaj ponovo.';del.disabled=false}};
  document.body.classList.add('open');setTimeout(()=>sh.querySelector('#pick button').focus(),50)}
 function zatvori(){document.body.classList.remove('open')}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 
-const app=document.getElementById('app');
-function render(){zatvori();const h=location.hash;let p;
- if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1]);
- else if((p=h.match(/^#\/m\/(\d+)/)))profil(+p[1]);
+function prikazi(nav){const h=location.hash;let p;
+ if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
+ else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);
  else home()}
-addEventListener('hashchange',render);render();
+// Osvežava ekran kad stignu novi podaci, bez skrolovanja i bez gubljenja fokusa u pretrazi
+function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selectionStart:0;
+ prikazi(false);
+ if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
+
+// Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
+Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,toast});
+addEventListener('hashchange',()=>{zatvori();prikazi(true)});
+prikazi(true);
 </script>
 </body>
 </html>

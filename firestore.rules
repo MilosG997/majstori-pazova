@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Pravila za bazu Majstori Pazova.
+// Nalepiti u Firebase konzoli: Firestore -> Rules -> Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Majstore dodaje i menja samo administrator
+    function jeAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'milosnpcz97@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function validnaOcena(mid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['ocena', 'komentar', 'ime', 'oznake', 'uid', 'vreme'])
+        && d.keys().hasAll(['ocena', 'komentar', 'ime', 'oznake', 'uid', 'vreme'])
+        && d.ocena is int && d.ocena >= 1 && d.ocena <= 5
+        && d.komentar is string && d.komentar.size() <= 500
+        && d.ime is string && d.ime.size() >= 1 && d.ime.size() <= 30
+        && d.oznake is list && d.oznake.size() <= 3
+        && d.oznake.toSet().hasOnly(['Stigao na vreme', 'Cena kao dogovorena', 'Čisto i uredno'])
+        && d.uid == request.auth.uid
+        && d.vreme == request.time
+        && exists(/databases/$(database)/documents/majstori/$(mid));
+    }
+
+    match /majstori/{mid} {
+      allow read: if true;
+      allow write: if jeAdmin();
+
+      // Jedna ocena po korisniku po majstoru: ID dokumenta je uid korisnika
+      match /ocene/{uid} {
+        allow read: if true;
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && validnaOcena(mid);
+        allow delete: if request.auth != null
+          && (request.auth.uid == uid || jeAdmin());
+      }
+    }
+
+    // Aplikacija čita sve ocene odjednom (za proseke na listi)
+    match /{path=**}/ocene/{uid} {
+      allow read: if true;
+    }
+  }
+}

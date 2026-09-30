@@ -7,6 +7,9 @@ $RECYCLE.BIN/
 .vscode/
 .idea/
 
+# Lična podešavanja Claude-a
+.claude/settings.local.json
+
 # Alati (za kasnije)
 node_modules/
 .firebase/

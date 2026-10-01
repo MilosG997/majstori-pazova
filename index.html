@@ -129,8 +129,13 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .toggles button{border:1.5px solid var(--line);background:transparent;border-radius:20px;padding:8px 12px;font-size:.88rem}
 .toggles button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
 .sheet label{display:block;font-size:.85rem;font-weight:600;margin:0 0 6px}
-.sheet textarea,.sheet input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin-bottom:12px;font-size:1rem}
+.sheet textarea,.sheet input:not([type=checkbox]),.sheet select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin-bottom:12px;font-size:1rem}
 .sheet textarea{min-height:90px;resize:vertical}
+.sheet select{height:46px}
+.sheet label.sagl{display:flex;gap:10px;align-items:flex-start;font-weight:500;font-size:.88rem;margin:4px 0 12px}
+.sagl input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
+.status{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;font-size:.92rem}
+.status b{display:block;margin-bottom:4px}
 .err{color:#C0392B;font-size:.85rem;min-height:1.2em;margin:-4px 0 8px}
 
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
@@ -147,7 +152,7 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,doc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {getFirestore,collection,collectionGroup,doc,getDoc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
 const firebaseConfig={
@@ -317,7 +322,7 @@ function home(){
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
-   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="toast('U pravoj aplikaciji ovde majstor ostavlja podatke i daje saglasnost za objavu broja.')">Upiši se</button></div>`;
+   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>`;
  }
  app.innerHTML=`<header class="top">
   <div class="brand"><div class="mark">${svg('teski')}</div><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
@@ -390,6 +395,60 @@ async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
   try{await deleteDoc(doc(db,'majstori',id,'ocene',user.uid));zatvori();toast('Ocena je obrisana.')}
   catch(e){console.error(e);err.textContent='Brisanje nije uspelo. Probaj ponovo.';del.disabled=false}};
  document.body.classList.add('open');setTimeout(()=>sh.querySelector('#pick button').focus(),50)}
+// ---------- Upis majstora ----------
+const normTel=s=>String(s).replace(/[\s\-\/().]/g,'');
+const telOk=s=>/^(\+381|0)[0-9]{8,9}$/.test(s);
+const STATUS={
+ na_cekanju:['Prijava čeka odobrenje','Primili smo tvoju prijavu. Pre objave ćemo te pozvati da proverimo podatke.'],
+ odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
+ odbijen:['Prijava nije odobrena','Za pitanja nas kontaktiraj.']
+};
+async function upisSe(){
+ if(!user&&!(await prijava()))return;
+ let p=null;
+ try{const s=await getDoc(doc(db,'prijave',user.uid));if(s.exists())p=s.data()}
+ catch(e){console.error(e);toast('Ne mogu da proverim prijavu. Probaj ponovo.');return}
+ if(p){
+  const [nas,txt]=STATUS[p.status]||STATUS.na_cekanju;
+  sh.innerHTML=`<h3 id="sheetTitle">Tvoja prijava</h3>
+  <div class="status"><b>${nas}</b>${txt}</div>
+  <p class="sub">${esc(p.ime)} · ${esc((kat(p.kategorija)||{}).s||'')} · ${esc(p.telefon)}</p>
+  <button class="btn yellow" id="ok">U redu</button>`;
+  document.getElementById('ok').onclick=zatvori;
+  document.body.classList.add('open');return}
+ const mesta=new Set();
+ sh.innerHTML=`<h3 id="sheetTitle">Upiši se kao majstor</h3><p class="sub">Besplatno. Pre objave te pozovemo da proverimo podatke.</p>
+ <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(user.displayName||'')}">
+ <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel">
+ <label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}">${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
+ <label>Mesta u kojima radiš</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="false" data-m="${m}">${m}</button>`).join('')}</div>
+ <label for="pIsk">Godine iskustva</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60">
+ <label for="pOpis">O sebi i svom iskustvu</label><textarea id="pOpis" maxlength="300" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke."></textarea>
+ <label class="sagl"><input type="checkbox" id="pSag"><span>Saglasan sam da se moje ime, broj telefona, mesta u kojima radim i opis javno objave u aplikaciji Majstori Pazova.</span></label>
+ <div class="err" id="err"></div>
+ <button class="btn yellow" id="save">Pošalji prijavu</button>`;
+ const $=id=>document.getElementById(id),err=$('err'),save=$('save');
+ sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
+ save.onclick=async()=>{
+  const ime=$('pIme').value.trim().replace(/\s+/g,' '),tel=normTel($('pTel').value),k=$('pKat').value,
+   isk=$('pIsk').value===''?NaN:Number($('pIsk').value),opis=$('pOpis').value.trim();
+  const g=ime.length<3?'Upiši ime i prezime.'
+   :!telOk(tel)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
+   :!k?'Izaberi čime se baviš.'
+   :!mesta.size?'Izaberi bar jedno mesto u kome radiš.'
+   :!Number.isInteger(isk)||isk<0||isk>60?'Upiši godine iskustva (broj od 0 do 60).'
+   :opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.'
+   :!$('pSag').checked?'Da bismo te objavili, potrebna je tvoja saglasnost.':'';
+  if(g){err.textContent=g;return}
+  err.textContent='';save.disabled=true;save.textContent='Šaljem…';
+  try{
+   await setDoc(doc(db,'prijave',user.uid),{
+    ime,telefon:tel,kategorija:k,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo:isk,opis,
+    saglasnost:true,status:'na_cekanju',uid:user.uid,email:user.email,vreme:serverTimestamp()});
+   zatvori();toast('Prijava je poslata. Javićemo ti se pre objave.')
+  }catch(e){console.error(e);err.textContent='Slanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent='Pošalji prijavu'}};
+ document.body.classList.add('open');setTimeout(()=>$('pIme').focus(),50)}
+
 function zatvori(){document.body.classList.remove('open')}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
@@ -404,7 +463,7 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
  if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
 </script>

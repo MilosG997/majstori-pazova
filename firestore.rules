@@ -26,6 +26,36 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/majstori/$(mid));
     }
 
+    function validnaPrijava() {
+      let d = request.resource.data;
+      let polja = ['ime', 'telefon', 'kategorija', 'mesta', 'iskustvo', 'opis',
+                   'saglasnost', 'status', 'uid', 'email', 'vreme'];
+      return d.keys().hasOnly(polja) && d.keys().hasAll(polja)
+        && d.ime is string && d.ime.size() >= 3 && d.ime.size() <= 50
+        && d.telefon is string && d.telefon.matches('^([+]381|0)[0-9]{8,9}$')
+        && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',
+                            'tesar', 'teski', 'klima', 'bravar', 'krov']
+        && d.mesta is list && d.mesta.size() >= 1 && d.mesta.size() <= 10
+        && d.mesta.toSet().hasOnly(['Stara Pazova', 'Nova Pazova', 'Novi Banovci',
+             'Stari Banovci', 'Banovci-Dunav', 'Belegiš', 'Surduk', 'Golubinci',
+             'Vojka', 'Krnješevci'])
+        && d.iskustvo is int && d.iskustvo >= 0 && d.iskustvo <= 60
+        && d.opis is string && d.opis.size() >= 20 && d.opis.size() <= 300
+        && d.saglasnost == true
+        && d.status == 'na_cekanju'
+        && d.uid == request.auth.uid
+        && d.email == request.auth.token.email
+        && d.vreme == request.time;
+    }
+
+    // Prijave majstora: jedna po Google nalogu (ID dokumenta je uid).
+    // Vidi ih samo podnosilac i administrator; broj nije javan dok se ne odobri.
+    match /prijave/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || jeAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid && validnaPrijava();
+      allow update, delete: if jeAdmin();
+    }
+
     match /majstori/{mid} {
       allow read: if true;
       allow write: if jeAdmin();

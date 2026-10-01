@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Majstori Pazova",
+  "short_name": "Majstori",
+  "description": "Imenik majstora za opštinu Stara Pazova: struja, voda, krečenje, keramika i drugo.",
+  "lang": "sr-Latn",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16264A",
+  "theme_color": "#16264A",
+  "categories": ["lifestyle", "business"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

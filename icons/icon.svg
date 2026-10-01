@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Privremena ikonica: logo iz zaglavlja (cigle) na žutoj podlozi.
+       Crtež je u sredini (sigurna zona) da bi Android mogao da iseče krug ili zaobljeni kvadrat. -->
+  <rect width="512" height="512" fill="#F2C230"/>
+  <g transform="translate(256 256) scale(14) translate(-12 -12)" fill="none" stroke="#16264A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 5h18v14H3z"/>
+    <path d="M3 10h18M3 15h18M9 5v5M15 10v5M9 15v4"/>
+  </g>
+</svg>

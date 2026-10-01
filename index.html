@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Majstori Pazova</title>
+<meta name="theme-color" content="#16264A">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Majstori">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
@@ -606,6 +612,10 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
 Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,prijaviKomentar,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
+</script>
+<script>
+// Service worker: instalacija na telefon i rad bez interneta
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(e=>console.error(e)));
 </script>
 </body>
 </html>

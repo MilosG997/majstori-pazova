@@ -159,6 +159,12 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .sagl input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .status{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;font-size:.92rem}
 .status b{display:block;margin-bottom:4px}
+.btn.google{width:100%;background:var(--card);border:1.5px solid var(--line);color:var(--text)}
+.btn.google svg{width:20px;height:20px;stroke:none}
+.ili{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.82rem;margin:14px 0}
+.ili::before,.ili::after{content:"";flex:1;height:1px;background:var(--line)}
+.alt{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:12px;font-size:.88rem}
+.hint{font-size:.82rem;color:var(--muted);margin:-6px 0 12px}
 .err{color:#C0392B;font-size:.85rem;min-height:1.2em;margin:-4px 0 8px}
 
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
@@ -180,7 +186,7 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,onSnapshot,setDoc,updateDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
@@ -195,6 +201,7 @@ const firebaseConfig={
 const ADMIN_EMAIL='milosnpcz97@gmail.com';
 const fb=initializeApp(firebaseConfig);
 const auth=getAuth(fb);
+auth.languageCode='sr'; // mejlovi za potvrdu i novu šifru na srpskom
 const db=getFirestore(fb);
 
 const app=document.getElementById('app');
@@ -281,6 +288,8 @@ const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
 const fmt=a=>a.toFixed(1).replace('.',',');
 const uMestu=m=>!mesto||m.r.includes(mesto);
 const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
+// Ime uz recenziju: "Ime P." sa Google naloga ili iz registracije
+const imeNaloga=()=>kratkoIme(user&&user.displayName)||'Korisnik';
 const jeAdmin=()=>!!user&&user.email===ADMIN_EMAIL&&user.emailVerified;
 const kratkoIme=n=>{const p=String(n||'').trim().split(/\s+/).filter(Boolean);return p.length?(p[0]+(p[1]?' '+p[1][0]+'.':'')).slice(0,30):''};
 function kad(v){const d=(Date.now()-v)/864e5;
@@ -322,21 +331,104 @@ onAuthStateChanged(auth,u=>{user=u;
   adminOdjava.push(onSnapshot(collectionGroup(db,'dojave'),s=>{DO=s.docs.map(d=>({ref:d.ref,ruid:d.ref.parent.parent.id,mid:d.ref.parent.parent.parent.parent.id}));osvezi()},e=>console.error(e)));
  }
  osvezi()});
-async function prijava(){
- try{await signInWithPopup(auth,new GoogleAuthProvider());return true}
- catch(e){
-  if(e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request')return false;
-  console.error(e);
-  toast(e.code==='auth/popup-blocked'?'Pregledač je blokirao prozor za prijavu. Dozvoli iskačuće prozore i probaj ponovo.'
-   :e.code==='auth/unauthorized-domain'?'Ovaj sajt još nije dozvoljen u Firebase-u (Authorized domains).'
-   :'Prijava nije uspela. Probaj ponovo.');
-  return false}}
+// Prijava: Google nalog ili email i šifra. Za pisanje (ocena, upis, dojava) email mora biti potvrđen.
+// prijava() vraća Promise<boolean>: true kad je korisnik prijavljen i potvrdio email.
+let cekaPrijavu=null;
+function prijava(){
+ if(user&&user.emailVerified)return Promise.resolve(true);
+ return new Promise(res=>{if(cekaPrijavu)cekaPrijavu(false);cekaPrijavu=res;user?ekranPotvrde():ekranPrijave('prijava')})}
+function zavrsiPrijavu(){const f=cekaPrijavu;cekaPrijavu=null;document.body.classList.remove('open');osvezi();if(f)f(true)}
+const GRESKE={
+ 'auth/invalid-email':'Email adresa nije ispravna.',
+ 'auth/invalid-credential':'Pogrešan email ili šifra.',
+ 'auth/wrong-password':'Pogrešan email ili šifra.',
+ 'auth/user-not-found':'Pogrešan email ili šifra.',
+ 'auth/email-already-in-use':'Nalog sa ovim emailom već postoji. Prijavi se ili izaberi „Zaboravio sam šifru”.',
+ 'auth/weak-password':'Šifra je preslaba. Upiši najmanje 8 znakova.',
+ 'auth/password-does-not-meet-requirements':'Šifra mora imati najmanje 8 znakova.',
+ 'auth/too-many-requests':'Previše pokušaja. Sačekaj malo pa probaj ponovo.',
+ 'auth/network-request-failed':'Nema internet veze. Proveri vezu i probaj ponovo.',
+ 'auth/popup-blocked':'Pregledač je blokirao prozor za prijavu. Dozvoli iskačuće prozore i probaj ponovo.',
+ 'auth/unauthorized-domain':'Ovaj sajt još nije dozvoljen u Firebase-u (Authorized domains).',
+ 'auth/operation-not-allowed':'Prijava emailom još nije uključena u Firebase-u.'
+};
+const greskaPrijave=e=>GRESKE[e.code]||'Nije uspelo. Probaj ponovo.';
+const G_IKONA='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>';
+
+function ekranPrijave(mod){
+ const $=id=>document.getElementById(id);
+ const naslov={prijava:'Prijava',registracija:'Registracija',zaboravljena:'Zaboravljena šifra'}[mod];
+ const google=mod!=='zaboravljena'?`<button class="btn google" id="gBtn">${G_IKONA}Nastavi sa Google nalogom</button><div class="ili">ili emailom</div>`:'';
+ const polja=mod==='registracija'
+  ?`<label for="aIme">Ime</label><input id="aIme" maxlength="30" autocomplete="given-name">
+    <label for="aPrez">Prezime</label><input id="aPrez" maxlength="30" autocomplete="family-name">
+    <label for="aMail">Email</label><input id="aMail" type="email" inputmode="email" autocomplete="email">
+    <label for="aPass">Šifra</label><input id="aPass" type="password" minlength="8" autocomplete="new-password">
+    <p class="hint">Najmanje 8 znakova. Uz recenzije se prikazuje ime i prvo slovo prezimena.</p>`
+  :mod==='prijava'
+  ?`<label for="aMail">Email</label><input id="aMail" type="email" inputmode="email" autocomplete="email">
+    <label for="aPass">Šifra</label><input id="aPass" type="password" autocomplete="current-password">`
+  :`<p class="sub">Upiši email sa kojim si se registrovao. Poslaćemo ti link za novu šifru.</p>
+    <label for="aMail">Email</label><input id="aMail" type="email" inputmode="email" autocomplete="email">`;
+ const dugme={prijava:'Prijavi se',registracija:'Registruj se',zaboravljena:'Pošalji link'}[mod];
+ const alt=mod==='prijava'
+  ?`<button class="lnk" data-m="zaboravljena">Zaboravio sam šifru</button><button class="lnk" data-m="registracija">Nemaš nalog? Registruj se</button>`
+  :`<button class="lnk" data-m="prijava">${mod==='registracija'?'Već imaš nalog? Prijavi se':'Nazad na prijavu'}</button>`;
+ sh.innerHTML=`<h3 id="sheetTitle">${naslov}</h3>
+ ${mod==='zaboravljena'?'':'<p class="sub">Prijava je potrebna samo za ocenjivanje. Majstore i brojeve vidiš i bez nje.</p>'}
+ ${google}${polja}<div class="err" id="err"></div>
+ <button class="btn yellow" id="aOk">${dugme}</button><div class="alt">${alt}</div>`;
+ const err=$('err'),ok=$('aOk');
+ sh.querySelectorAll('.alt .lnk').forEach(b=>b.onclick=()=>ekranPrijave(b.dataset.m));
+ if($('gBtn'))$('gBtn').onclick=async()=>{
+  try{await signInWithPopup(auth,new GoogleAuthProvider());zavrsiPrijavu()}
+  catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);err.textContent=greskaPrijave(e)}}};
+ const radi=async(f)=>{const t=ok.textContent;ok.disabled=true;ok.textContent='Sačekaj…';err.textContent='';
+  try{await f()}catch(e){console.error(e);err.textContent=greskaPrijave(e)}finally{ok.disabled=false;ok.textContent=t}};
+ ok.onclick=()=>{
+  const mail=$('aMail').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(mail)){err.textContent='Upiši ispravnu email adresu.';return}
+  if(mod==='zaboravljena')return radi(async()=>{await sendPasswordResetEmail(auth,mail);
+   ekranPrijave('prijava');toast('Ako nalog postoji, poslali smo link za novu šifru. Pogledaj i Spam.')});
+  const pass=$('aPass').value;
+  if(mod==='prijava'){
+   if(!pass){err.textContent='Upiši šifru.';return}
+   return radi(async()=>{const c=await signInWithEmailAndPassword(auth,mail,pass);c.user.emailVerified?zavrsiPrijavu():ekranPotvrde()})}
+  const ime=$('aIme').value.trim().replace(/\s+/g,' '),prez=$('aPrez').value.trim().replace(/\s+/g,' ');
+  if(ime.length<2){err.textContent='Upiši ime.';return}
+  if(prez.length<2){err.textContent='Upiši prezime.';return}
+  if(pass.length<8){err.textContent='Šifra mora imati najmanje 8 znakova.';return}
+  radi(async()=>{const c=await createUserWithEmailAndPassword(auth,mail,pass);
+   await updateProfile(c.user,{displayName:ime+' '+prez});
+   await sendEmailVerification(c.user);ekranPotvrde()})};
+ document.body.classList.add('open');setTimeout(()=>($('aIme')||$('aMail')).focus(),50)}
+
+function ekranPotvrde(){
+ const $=id=>document.getElementById(id);
+ sh.innerHTML=`<h3 id="sheetTitle">Potvrdi email</h3>
+ <div class="status"><b>Poslali smo link na ${esc(user.email)}</b>Otvori mejl i klikni na link za potvrdu, pa se vrati ovde. Ako ga ne vidiš, pogledaj Spam.</div>
+ <div class="err" id="err"></div>
+ <button class="btn yellow" id="vOk">Potvrdio sam, nastavi</button>
+ <button class="btn del" id="vRe" style="color:var(--text)">Pošalji link ponovo</button>
+ <div class="alt"><button class="lnk" id="vOut">Odjavi se</button></div>`;
+ const err=$('err');
+ $('vOk').onclick=async()=>{
+  try{await reload(user);
+   if(user.emailVerified){await user.getIdToken(true);toast('Email je potvrđen.');zavrsiPrijavu()}
+   else err.textContent='Email još nije potvrđen. Klikni na link u mejlu, pa probaj ponovo.'}
+  catch(e){console.error(e);err.textContent=greskaPrijave(e)}};
+ $('vRe').onclick=async()=>{
+  try{await sendEmailVerification(user);toast('Link je ponovo poslat.')}
+  catch(e){console.error(e);err.textContent=greskaPrijave(e)}};
+ $('vOut').onclick=async()=>{zatvori();await odjava()};
+ document.body.classList.add('open')}
+
 async function odjava(){await signOut(auth);toast('Odjavljen si.')}
 const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
 // Prijavljene recenzije grupisane po recenziji: [{mid,ruid,broj,refs}]
 const prijavljene=()=>{const g={};DO.forEach(d=>{const k=d.mid+'/'+d.ruid;(g[k]=g[k]||{mid:d.mid,ruid:d.ruid,refs:[]}).refs.push(d.ref)});return Object.values(g)};
 const zaAdmina=()=>naCekanju().length+prijavljene().length;
-const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
+const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · ${user.emailVerified?'':'<button class="lnk" onclick="prijava()">Potvrdi email</button> · '}<button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
 async function ubaci(){
  if(!confirm(`Ubaciti ${SEED.length} probnih majstora u bazu?`))return;
@@ -409,14 +501,14 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
 
 const OPIS=['','Loše','Slabo','Solidno','Dobro','Odlično'];
 async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
- if(!user&&!(await prijava()))return;
+ if(!(await prijava()))return;
  const moja=oceneOd(m).find(x=>x.uid===user.uid);
  let z=moja?moja.r:0;const tg=new Set(moja?moja.tg:[]);
  sh.innerHTML=`<h3 id="sheetTitle">${moja?'Izmeni ocenu':'Oceni'}: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora. Vide je svi. <a href="privatnost.html" target="_blank">Privatnost</a></p>
  <div class="pick" id="pick">${[1,2,3,4,5].map(i=>`<button aria-label="${i} od 5" data-v="${i}" class="${i<=z?'on':''}">★</button>`).join('')}</div><div class="pickLbl" id="pl">${z?OPIS[z]:'Izaberi broj zvezdica'}</div>
  <div class="toggles">${TAGOVI.map(t=>`<button aria-pressed="${tg.has(t)}" data-t="${t}">${t}</button>`).join('')}</div>
  <label for="kom">Komentar</label><textarea id="kom" maxlength="500" placeholder="Kako je prošao posao?">${moja?esc(moja.c):''}</textarea>
- <label for="ime">Ime koje se prikazuje</label><input id="ime" placeholder="npr. Marko P." maxlength="30" value="${esc(moja?moja.a:kratkoIme(user.displayName))}">
+ <p class="hint">Uz recenziju piše: <b>${esc(imeNaloga())}</b></p>
  <div class="err" id="err"></div>
  <button class="btn yellow" id="save">${moja?'Sačuvaj izmenu':'Sačuvaj ocenu'}</button>
  ${moja?'<button class="btn del" id="del">Obriši moju ocenu</button>':''}`;
@@ -429,7 +521,7 @@ async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
   try{
    await setDoc(doc(db,'majstori',id,'ocene',user.uid),{
     ocena:z,komentar:document.getElementById('kom').value.trim().slice(0,500),
-    ime:(document.getElementById('ime').value.trim()||'Anonimno').slice(0,30),
+    ime:imeNaloga(),
     oznake:TAGOVI.filter(t=>tg.has(t)),uid:user.uid,vreme:serverTimestamp()});
    zatvori();toast(moja?'Ocena je izmenjena.':'Ocena je sačuvana. Vide je svi.')
   }catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent=tekst}};
@@ -478,7 +570,7 @@ function obavestiAdmina(d){
    admin:location.origin+'/#/admin'}).toString()}).catch(e=>console.error(e))}
 
 async function upisSe(){
- if(!user&&!(await prijava()))return;
+ if(!(await prijava()))return;
  let p=null;
  try{const s=await getDoc(doc(db,'prijave',user.uid));if(s.exists())p=s.data()}
  catch(e){console.error(e);toast('Ne mogu da proverim prijavu. Probaj ponovo.');return}
@@ -586,14 +678,14 @@ const adm={
 };
 
 async function prijaviKomentar(mid,ruid){
- if(!user&&!(await prijava()))return;
+ if(!(await prijava()))return;
  if(ruid===user.uid)return;
  if(!confirm('Prijaviti ovaj komentar administratoru kao neprimeren ili lažan?'))return;
  try{await setDoc(doc(db,'majstori',mid,'ocene',ruid,'dojave',user.uid),{uid:user.uid,vreme:serverTimestamp()});
   toast('Hvala! Komentar je prijavljen administratoru.')}
  catch(e){console.error(e);toast(e.code==='permission-denied'?'Već si prijavio ovaj komentar.':'Prijava nije uspela. Probaj ponovo.')}}
 
-function zatvori(){document.body.classList.remove('open')}
+function zatvori(){document.body.classList.remove('open');if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 

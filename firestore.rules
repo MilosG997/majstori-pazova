@@ -5,6 +5,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Nalog sa potvrđenim emailom (Google nalozi su uvek potvrđeni;
+    // kod registracije emailom korisnik mora da klikne link iz mejla)
+    function potvrdjen() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
     // Majstore dodaje i menja samo administrator
     function jeAdmin() {
       return request.auth != null
@@ -19,6 +25,7 @@ service cloud.firestore {
         && d.ocena is int && d.ocena >= 1 && d.ocena <= 5
         && d.komentar is string && d.komentar.size() <= 500
         && d.ime is string && d.ime.size() >= 1 && d.ime.size() <= 30
+        && d.ime.matches('^[^ ]+( [^ ][.])?$')
         && d.oznake is list && d.oznake.size() <= 3
         && d.oznake.toSet().hasOnly(['Stigao na vreme', 'Cena kao dogovorena', 'Čisto i uredno'])
         && d.uid == request.auth.uid
@@ -52,7 +59,7 @@ service cloud.firestore {
     // Vidi ih samo podnosilac i administrator; broj nije javan dok se ne odobri.
     match /prijave/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || jeAdmin());
-      allow create: if request.auth != null && request.auth.uid == uid && validnaPrijava();
+      allow create: if potvrdjen() && request.auth.uid == uid && validnaPrijava();
       allow update, delete: if jeAdmin();
     }
 
@@ -64,7 +71,7 @@ service cloud.firestore {
       // Jedna ocena po korisniku po majstoru: ID dokumenta je uid korisnika
       match /ocene/{uid} {
         allow read: if true;
-        allow create, update: if request.auth != null
+        allow create, update: if potvrdjen()
           && request.auth.uid == uid
           && validnaOcena(mid);
         allow delete: if request.auth != null
@@ -73,7 +80,7 @@ service cloud.firestore {
         // Dojava (prijava neprimerenog komentara): jedna po korisniku po recenziji.
         // Vidi ih i briše samo administrator.
         match /dojave/{prijavio} {
-          allow create: if request.auth != null
+          allow create: if potvrdjen()
             && request.auth.uid == prijavio
             && prijavio != uid
             && request.resource.data.keys().hasOnly(['uid', 'vreme'])

@@ -56,8 +56,9 @@ service cloud.firestore {
       allow update, delete: if jeAdmin();
     }
 
+    // Javno se vide samo aktivni majstori; sakrivene vidi samo administrator
     match /majstori/{mid} {
-      allow read: if true;
+      allow read: if resource.data.aktivan == true || jeAdmin();
       allow write: if jeAdmin();
 
       // Jedna ocena po korisniku po majstoru: ID dokumenta je uid korisnika

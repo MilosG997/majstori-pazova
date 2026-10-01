@@ -114,6 +114,20 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .foot p b{display:block;font-size:1rem}
 .foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
 .adm{margin-top:14px}
+.ac{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.ac.off{opacity:.65}
+.ac .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ac .h b{font-size:1.02rem}
+.ac .h span{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.ac .m{font-size:.85rem;color:var(--muted);margin-top:2px}
+.ac p{margin:6px 0 0;font-size:.92rem}
+.ab{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ab button,.ab a{height:40px;padding:0 14px;border-radius:10px;border:1.5px solid var(--line);background:transparent;font-weight:600;font-size:.9rem;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text)}
+.ab svg{width:16px;height:16px;stroke:currentColor}
+.ab .ok{background:var(--green);border-color:var(--green);color:#fff}
+.ab .no{color:#C0392B}
+.badge{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--line);color:var(--text);margin-left:6px;vertical-align:middle}
+.sub2{font-size:.85rem;color:var(--muted);margin:-6px 0 12px}
 
 .sheetBg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;z-index:20}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto}
@@ -152,7 +166,7 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,doc,getDoc,onSnapshot,setDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,onSnapshot,setDoc,updateDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
 const firebaseConfig={
@@ -266,9 +280,10 @@ function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
  else toast(`Broj telefona za ${m.n} još nije unet.`)}
 
 // ---------- Baza ----------
-onSnapshot(collection(db,'majstori'),s=>{
- M=s.docs.map(d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan!==false}})
-  .filter(m=>m.a&&m.n&&kat(m.k));
+const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true}};
+// Javno se čitaju samo aktivni majstori (pravila baze ne puštaju sakrivene)
+onSnapshot(query(collection(db,'majstori'),where('aktivan','==',true)),s=>{
+ M=s.docs.map(uMajstora).filter(m=>m.n&&kat(m.k));
  ucitano=true;greska='';osvezi();
 },e=>{console.error(e);ucitano=true;
  greska=e.code==='permission-denied'?'Baza je zaključana: pravila baze (firestore.rules) još nisu postavljena u Firebase konzoli.':'Ne mogu da učitam majstore. Proveri internet vezu i osveži stranu.';osvezi()});
@@ -281,7 +296,15 @@ onSnapshot(collectionGroup(db,'ocene'),s=>{
 },e=>console.error(e));
 
 // ---------- Prijava ----------
-onAuthStateChanged(auth,u=>{user=u;osvezi()});
+// Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
+let AM=[],PR=[],adminOdjava=[];
+onAuthStateChanged(auth,u=>{user=u;
+ adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];
+ if(jeAdmin()){
+  adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
+  adminOdjava.push(onSnapshot(collection(db,'prijave'),s=>{PR=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});return{...x,uid:d.id,v:x.vreme?x.vreme.toMillis():Date.now()}});osvezi()},e=>console.error(e)));
+ }
+ osvezi()});
 async function prijava(){
  try{await signInWithPopup(auth,new GoogleAuthProvider());return true}
  catch(e){
@@ -292,7 +315,8 @@ async function prijava(){
    :'Prijava nije uspela. Probaj ponovo.');
   return false}}
 async function odjava(){await signOut(auth);toast('Odjavljen si.')}
-const nalog=()=>`<span class="acct">${user?`${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
+const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
+const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${naCekanju().length?` (${naCekanju().length})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
 async function ubaci(){
  if(!confirm(`Ubaciti ${SEED.length} probnih majstora u bazu?`))return;
@@ -403,6 +427,28 @@ const STATUS={
  odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
  odbijen:['Prijava nije odobrena','Za pitanja nas kontaktiraj.']
 };
+// Polja majstora: ista forma za upis i za izmenu u admin panelu
+function poljaHtml(d){return `
+ <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(d.ime||'')}">
+ <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel" value="${esc(d.telefon||'')}">
+ <label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
+ <label>Mesta u kojima radi</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="${(d.mesta||[]).includes(m)}" data-m="${m}">${m}</button>`).join('')}</div>
+ <label for="pIsk">Godine iskustva</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60" value="${d.iskustvo??''}">
+ <label for="pOpis">O sebi i svom iskustvu</label><textarea id="pOpis" maxlength="300" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>`}
+function poveziPolja(d){const mesta=new Set(d.mesta||[]);
+ sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
+ // Vraća [podaci, greška]; admin sme da ostavi prazan telefon i kratak opis
+ return strogo=>{const $=id=>document.getElementById(id);
+  const ime=$('pIme').value.trim().replace(/\s+/g,' '),telefon=normTel($('pTel').value),kategorija=$('pKat').value,
+   iskustvo=$('pIsk').value===''?NaN:Number($('pIsk').value),opis=$('pOpis').value.trim();
+  const g=ime.length<3?'Upiši ime i prezime.'
+   :(strogo||telefon)&&!telOk(telefon)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
+   :!kategorija?'Izaberi čime se bavi.'
+   :!mesta.size?'Izaberi bar jedno mesto.'
+   :!Number.isInteger(iskustvo)||iskustvo<0||iskustvo>60?'Upiši godine iskustva (broj od 0 do 60).'
+   :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
+  return [{ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis},g]}}
+
 async function upisSe(){
  if(!user&&!(await prijava()))return;
  let p=null;
@@ -416,45 +462,94 @@ async function upisSe(){
   <button class="btn yellow" id="ok">U redu</button>`;
   document.getElementById('ok').onclick=zatvori;
   document.body.classList.add('open');return}
- const mesta=new Set();
  sh.innerHTML=`<h3 id="sheetTitle">Upiši se kao majstor</h3><p class="sub">Besplatno. Pre objave te pozovemo da proverimo podatke.</p>
- <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(user.displayName||'')}">
- <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel">
- <label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}">${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
- <label>Mesta u kojima radiš</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="false" data-m="${m}">${m}</button>`).join('')}</div>
- <label for="pIsk">Godine iskustva</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60">
- <label for="pOpis">O sebi i svom iskustvu</label><textarea id="pOpis" maxlength="300" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke."></textarea>
+ ${poljaHtml({ime:user.displayName||''})}
  <label class="sagl"><input type="checkbox" id="pSag"><span>Saglasan sam da se moje ime, broj telefona, mesta u kojima radim i opis javno objave u aplikaciji Majstori Pazova.</span></label>
  <div class="err" id="err"></div>
  <button class="btn yellow" id="save">Pošalji prijavu</button>`;
- const $=id=>document.getElementById(id),err=$('err'),save=$('save');
- sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
+ const procitaj=poveziPolja({}),err=document.getElementById('err'),save=document.getElementById('save');
  save.onclick=async()=>{
-  const ime=$('pIme').value.trim().replace(/\s+/g,' '),tel=normTel($('pTel').value),k=$('pKat').value,
-   isk=$('pIsk').value===''?NaN:Number($('pIsk').value),opis=$('pOpis').value.trim();
-  const g=ime.length<3?'Upiši ime i prezime.'
-   :!telOk(tel)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
-   :!k?'Izaberi čime se baviš.'
-   :!mesta.size?'Izaberi bar jedno mesto u kome radiš.'
-   :!Number.isInteger(isk)||isk<0||isk>60?'Upiši godine iskustva (broj od 0 do 60).'
-   :opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.'
-   :!$('pSag').checked?'Da bismo te objavili, potrebna je tvoja saglasnost.':'';
+  let [d,g]=procitaj(true);
+  if(!g&&!document.getElementById('pSag').checked)g='Da bismo te objavili, potrebna je tvoja saglasnost.';
   if(g){err.textContent=g;return}
   err.textContent='';save.disabled=true;save.textContent='Šaljem…';
   try{
-   await setDoc(doc(db,'prijave',user.uid),{
-    ime,telefon:tel,kategorija:k,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo:isk,opis,
-    saglasnost:true,status:'na_cekanju',uid:user.uid,email:user.email,vreme:serverTimestamp()});
+   await setDoc(doc(db,'prijave',user.uid),{...d,saglasnost:true,status:'na_cekanju',uid:user.uid,email:user.email,vreme:serverTimestamp()});
    zatvori();toast('Prijava je poslata. Javićemo ti se pre objave.')
   }catch(e){console.error(e);err.textContent='Slanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent='Pošalji prijavu'}};
- document.body.classList.add('open');setTimeout(()=>$('pIme').focus(),50)}
+ document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}
+
+// ---------- Admin ----------
+const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
+function admin(nav){
+ if(!jeAdmin()){app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
+  <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
+ const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen');
+ const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
+ const imeM=id=>(AM.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
+ const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
+ const prijavaKartica=(p,odbijena)=>`<div class="ac ${odbijena?'off':''}"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
+  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(p.telefon)}</div>
+  <div class="m">${esc((p.mesta||[]).join(', '))}</div><div class="m">${esc(p.email||'')}</div>
+  <p>${esc(p.opis)}</p>
+  <div class="ab">${telLink(p.telefon)}${odbijena
+   ?`<button onclick="adm.vratiPrijavu('${p.uid}')">Vrati na čekanje</button><button class="no" onclick="adm.obrisiPrijavu('${p.uid}')">Obriši</button>`
+   :`<button onclick="adm.izmeniPrijavu('${p.uid}')">Izmeni</button><button class="ok" onclick="adm.odobri('${p.uid}')">Odobri</button><button class="no" onclick="adm.odbij('${p.uid}')">Odbij</button>`}</div></div>`;
+ app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
+ <main>
+ <h2>Prijave na čekanju<span class="badge">${cek.length}</span></h2>
+ ${cek.length?cek.map(p=>prijavaKartica(p,false)).join(''):'<div class="empty">Nema novih prijava.</div>'}
+ <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
+ <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
+ ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
+  <div class="m">${esc((kat(m.k)||{}).s||m.k)} · ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(m.t):'bez telefona'}</div>
+  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button></div></div>`).join('')}
+ <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
+ ${recenzije.length?recenzije.map(r=>`<div class="ac"><div class="h"><b>${esc(imeM(r.mid))}</b><span>${kad(r.v)}</span></div>
+  <div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}
+  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${r.mid}','${r.uid}')">Obriši recenziju</button></div></div>`).join(''):'<div class="empty">Još nema recenzija.</div>'}
+ ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
+ </main>`;if(nav)scrollTo(0,0)}
+
+function izmeniForma(naslov,d,sacuvaj){
+ sh.innerHTML=`<h3 id="sheetTitle">${esc(naslov)}</h3>${poljaHtml(d)}<div class="err" id="err"></div><button class="btn yellow" id="save">Sačuvaj</button>`;
+ const procitaj=poveziPolja(d),err=document.getElementById('err'),save=document.getElementById('save');
+ save.onclick=async()=>{const [x,g]=procitaj(false);if(g){err.textContent=g;return}
+  save.disabled=true;save.textContent='Čuvam…';
+  try{await sacuvaj(x);zatvori();toast('Sačuvano.')}
+  catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent='Sačuvaj'}};
+ document.body.classList.add('open')}
+
+const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
+const adm={
+ izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
+  izmeniForma('Izmena prijave',p,x=>updateDoc(doc(db,'prijave',uid),x))},
+ odobri(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
+  if(!p.telefon){toast('Prijava nema broj telefona.');return}
+  if(!confirm(`Odobriti: ${p.ime}?\nPojaviće se u aplikaciji sa brojem ${p.telefon}.`))return;
+  const b=writeBatch(db),mid='u_'+uid;
+  b.set(doc(db,'majstori',mid),{ime:p.ime,kategorija:p.kategorija,mesta:p.mesta,iskustvo:p.iskustvo,opis:p.opis,telefon:p.telefon,aktivan:true,prijava:uid});
+  b.update(doc(db,'prijave',uid),{status:'odobren',majstor:mid});
+  pokusaj(()=>b.commit(),`${p.ime} je odobren i vidi se u aplikaciji.`)},
+ odbij(uid){const p=PR.find(x=>x.uid===uid);if(!p||!confirm(`Odbiti prijavu: ${p.ime}?`))return;
+  pokusaj(()=>updateDoc(doc(db,'prijave',uid),{status:'odbijen'}),'Prijava je odbijena.')},
+ vratiPrijavu(uid){pokusaj(()=>updateDoc(doc(db,'prijave',uid),{status:'na_cekanju'}),'Prijava je vraćena na čekanje.')},
+ obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
+  pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
+ izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
+  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o},x=>updateDoc(doc(db,'majstori',id),x))},
+ prikazi(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'majstori',id),{aktivan:vidljiv}),vidljiv?'Majstor se ponovo vidi u aplikaciji.':'Majstor je sakriven.')},
+ obrisiRecenziju(mid,uid){if(!confirm('Trajno obrisati ovu recenziju?'))return;
+  pokusaj(()=>deleteDoc(doc(db,'majstori',mid,'ocene',uid)),'Recenzija je obrisana.')}
+};
 
 function zatvori(){document.body.classList.remove('open')}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 
 function prikazi(nav){const h=location.hash;let p;
- if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
+ if(h.startsWith('#/admin'))admin(nav);
+ else if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
  else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);
  else home()}
 // Osvežava ekran kad stignu novi podaci, bez skrolovanja i bez gubljenja fokusa u pretrazi
@@ -463,7 +558,7 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
  if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
 </script>

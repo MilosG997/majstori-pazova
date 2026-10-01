@@ -1,7 +1,7 @@
 // Service worker: aplikacija se otvara i bez interneta (prikazuje poslednju sačuvanu verziju).
 // Uvek prvo pokušava mrežu, pa telefon odmah dobija nove verzije posle objave.
 // Firebase i ostali spoljni zahtevi idu mimo ovoga.
-const CACHE = 'majstori-v1';
+const CACHE = 'majstori-v2';
 const OSNOVA = ['/', '/index.html', '/privatnost.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {

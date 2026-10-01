@@ -459,7 +459,7 @@ function home(){
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com">Kontakt</a></p>`;
  }
  app.innerHTML=`<header class="top">
   <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
@@ -538,7 +538,7 @@ const telOk=s=>/^(\+381|0)[0-9]{8,9}$/.test(s);
 const STATUS={
  na_cekanju:['Prijava čeka odobrenje','Primili smo tvoju prijavu. Pre objave ćemo te pozvati da proverimo podatke.'],
  odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
- odbijen:['Prijava nije odobrena','Za pitanja nas kontaktiraj.']
+ odbijen:['Prijava nije odobrena','Za pitanja piši na majstoripazova@gmail.com.']
 };
 // Polja majstora: ista forma za upis i za izmenu u admin panelu
 function poljaHtml(d){return `

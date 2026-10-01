@@ -108,6 +108,8 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .rev .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:.75rem;border:1px solid var(--line);border-radius:20px;padding:2px 9px;color:var(--muted)}
 .mine{border-color:var(--green)}
+.rev .rep{background:none;border:0;color:var(--muted);font-size:.78rem;padding:8px 0 0;text-decoration:underline;text-underline-offset:2px}
+.ac.flag{border-color:#C0392B}
 
 .foot{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
 .foot p{margin:0;flex:1;font-size:.9rem}
@@ -303,12 +305,14 @@ onSnapshot(collectionGroup(db,'ocene'),s=>{
 
 // ---------- Prijava ----------
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
-let AM=[],PR=[],adminOdjava=[];
+let AM=[],PR=[],DO=[],adminOdjava=[];
 onAuthStateChanged(auth,u=>{user=u;
- adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];
+ adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'prijave'),s=>{PR=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});return{...x,uid:d.id,v:x.vreme?x.vreme.toMillis():Date.now()}});osvezi()},e=>console.error(e)));
+  // Dojave: majstori/{mid}/ocene/{ruid}/dojave/{ko je prijavio}
+  adminOdjava.push(onSnapshot(collectionGroup(db,'dojave'),s=>{DO=s.docs.map(d=>({ref:d.ref,ruid:d.ref.parent.parent.id,mid:d.ref.parent.parent.parent.parent.id}));osvezi()},e=>console.error(e)));
  }
  osvezi()});
 async function prijava(){
@@ -322,7 +326,10 @@ async function prijava(){
   return false}}
 async function odjava(){await signOut(auth);toast('Odjavljen si.')}
 const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
-const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${naCekanju().length?` (${naCekanju().length})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
+// Prijavljene recenzije grupisane po recenziji: [{mid,ruid,broj,refs}]
+const prijavljene=()=>{const g={};DO.forEach(d=>{const k=d.mid+'/'+d.ruid;(g[k]=g[k]||{mid:d.mid,ruid:d.ruid,refs:[]}).refs.push(d.ref)});return Object.values(g)};
+const zaAdmina=()=>naCekanju().length+prijavljene().length;
+const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · <button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
 async function ubaci(){
  if(!confirm(`Ubaciti ${SEED.length} probnih majstora u bazu?`))return;
@@ -388,7 +395,7 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
  <div class="phone">${m.t?'Telefon: '+esc(m.t):'Broj telefona još nije unet.'}</div>
  ${r.length?`<div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>`:''}
- <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}</div>`).join('')
+ <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${x.mine?'':`<button class="rep" onclick="prijaviKomentar('${m.id}','${x.uid}')">Prijavi komentar</button>`}</div>`).join('')
   :'<div class="empty">Još nema ocena. Budi prvi koji će oceniti ovog majstora.</div>'}</div>
  <div style="height:40px"></div>`;if(nav)scrollTo(0,0)}
 
@@ -509,8 +516,16 @@ function admin(nav){
   <div class="ab">${telLink(p.telefon)}${odbijena
    ?`<button onclick="adm.vratiPrijavu('${p.uid}')">Vrati na čekanje</button><button class="no" onclick="adm.obrisiPrijavu('${p.uid}')">Obriši</button>`
    :`<button onclick="adm.izmeniPrijavu('${p.uid}')">Izmeni</button><button class="ok" onclick="adm.odobri('${p.uid}')">Odobri</button><button class="no" onclick="adm.odbij('${p.uid}')">Odbij</button>`}</div></div>`;
+ const dojave=prijavljene().map(g=>({...g,r:(OC[g.mid]||[]).find(x=>x.uid===g.ruid)}));
+ const recKartica=(r,mid,broj,ruid)=>`<div class="ac ${broj?'flag':''}"><div class="h"><b>${esc(imeM(mid))}</b><span>${r?kad(r.v):''}</span></div>
+  ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
+  ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
+  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
+ ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
+ <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
+ ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
  <h2>Prijave na čekanju<span class="badge">${cek.length}</span></h2>
  ${cek.length?cek.map(p=>prijavaKartica(p,false)).join(''):'<div class="empty">Nema novih prijava.</div>'}
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
@@ -519,9 +534,7 @@ function admin(nav){
   <div class="m">${esc((kat(m.k)||{}).s||m.k)} · ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(m.t):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
- ${recenzije.length?recenzije.map(r=>`<div class="ac"><div class="h"><b>${esc(imeM(r.mid))}</b><span>${kad(r.v)}</span></div>
-  <div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}
-  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${r.mid}','${r.uid}')">Obriši recenziju</button></div></div>`).join(''):'<div class="empty">Još nema recenzija.</div>'}
+ ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
  ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
  </main>`;if(nav)scrollTo(0,0)}
 
@@ -553,9 +566,24 @@ const adm={
  izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
   izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o},x=>updateDoc(doc(db,'majstori',id),x))},
  prikazi(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'majstori',id),{aktivan:vidljiv}),vidljiv?'Majstor se ponovo vidi u aplikaciji.':'Majstor je sakriven.')},
+ // Briše recenziju zajedno sa njenim dojavama (Firestore ih ne briše sam)
  obrisiRecenziju(mid,uid){if(!confirm('Trajno obrisati ovu recenziju?'))return;
-  pokusaj(()=>deleteDoc(doc(db,'majstori',mid,'ocene',uid)),'Recenzija je obrisana.')}
+  const b=writeBatch(db);
+  if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
+  DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
+  pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
+ uRedu(mid,uid){const b=writeBatch(db);
+  DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
+  pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}
 };
+
+async function prijaviKomentar(mid,ruid){
+ if(!user&&!(await prijava()))return;
+ if(ruid===user.uid)return;
+ if(!confirm('Prijaviti ovaj komentar administratoru kao neprimeren ili lažan?'))return;
+ try{await setDoc(doc(db,'majstori',mid,'ocene',ruid,'dojave',user.uid),{uid:user.uid,vreme:serverTimestamp()});
+  toast('Hvala! Komentar je prijavljen administratoru.')}
+ catch(e){console.error(e);toast(e.code==='permission-denied'?'Već si prijavio ovaj komentar.':'Prijava nije uspela. Probaj ponovo.')}}
 
 function zatvori(){document.body.classList.remove('open')}
 document.getElementById('sheetBg').onclick=zatvori;
@@ -572,7 +600,7 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
  if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,prijaviKomentar,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
 </script>

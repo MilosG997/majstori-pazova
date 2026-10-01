@@ -69,7 +69,25 @@ service cloud.firestore {
           && validnaOcena(mid);
         allow delete: if request.auth != null
           && (request.auth.uid == uid || jeAdmin());
+
+        // Dojava (prijava neprimerenog komentara): jedna po korisniku po recenziji.
+        // Vidi ih i briše samo administrator.
+        match /dojave/{prijavio} {
+          allow create: if request.auth != null
+            && request.auth.uid == prijavio
+            && prijavio != uid
+            && request.resource.data.keys().hasOnly(['uid', 'vreme'])
+            && request.resource.data.uid == prijavio
+            && request.resource.data.vreme == request.time
+            && exists(/databases/$(database)/documents/majstori/$(mid)/ocene/$(uid));
+          allow read, delete: if jeAdmin();
+        }
       }
+    }
+
+    // Admin čita sve dojave odjednom
+    match /{path=**}/dojave/{prijavio} {
+      allow read: if jeAdmin();
     }
 
     // Aplikacija čita sve ocene odjednom (za proseke na listi)

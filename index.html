@@ -162,6 +162,12 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 <div class="sheetBg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- Netlify Forms: šalje adminu mejl kad stigne nova prijava majstora.
+     Namerno bez telefona i mejla podnosioca; ceo zapis je u Firebase-u (admin stranica). -->
+<form name="nova-prijava" data-netlify="true" netlify-honeypot="bot-field" hidden>
+ <input type="hidden" name="subject" value="Nova prijava majstora - Majstori Pazova">
+ <input name="ime"><input name="kategorija"><input name="mesta"><input name="admin"><input name="bot-field">
+</form>
 
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
@@ -449,6 +455,13 @@ function poveziPolja(d){const mesta=new Set(d.mesta||[]);
    :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
   return [{ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis},g]}}
 
+// Obaveštenje adminu preko Netlify Forms; ako ne uspe, prijava je svejedno u bazi
+function obavestiAdmina(d){
+ fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  body:new URLSearchParams({'form-name':'nova-prijava',subject:'Nova prijava majstora - Majstori Pazova',
+   ime:d.ime,kategorija:(kat(d.kategorija)||{}).s||d.kategorija,mesta:d.mesta.join(', '),
+   admin:location.origin+'/#/admin'}).toString()}).catch(e=>console.error(e))}
+
 async function upisSe(){
  if(!user&&!(await prijava()))return;
  let p=null;
@@ -475,6 +488,7 @@ async function upisSe(){
   err.textContent='';save.disabled=true;save.textContent='Šaljem…';
   try{
    await setDoc(doc(db,'prijave',user.uid),{...d,saglasnost:true,status:'na_cekanju',uid:user.uid,email:user.email,vreme:serverTimestamp()});
+   obavestiAdmina(d);
    zatvori();toast('Prijava je poslata. Javićemo ti se pre objave.')
   }catch(e){console.error(e);err.textContent='Slanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent='Pošalji prijavu'}};
  document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}

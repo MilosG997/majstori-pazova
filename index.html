@@ -116,6 +116,8 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .foot p b{display:block;font-size:1rem}
 .foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
 .adm{margin-top:14px}
+.legal{margin:20px 0 0;text-align:center;font-size:.82rem;color:var(--muted)}
+.legal a,.sheet .sub a,.sagl a{color:inherit}
 .ac{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
 .ac.off{opacity:.65}
 .ac .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -359,7 +361,8 @@ function home(){
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
-   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>`;
+   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a></p>`;
  }
  app.innerHTML=`<header class="top">
   <div class="brand"><div class="mark">${svg('teski')}</div><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
@@ -404,7 +407,7 @@ async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
  if(!user&&!(await prijava()))return;
  const moja=oceneOd(m).find(x=>x.uid===user.uid);
  let z=moja?moja.r:0;const tg=new Set(moja?moja.tg:[]);
- sh.innerHTML=`<h3 id="sheetTitle">${moja?'Izmeni ocenu':'Oceni'}: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora. Vide je svi.</p>
+ sh.innerHTML=`<h3 id="sheetTitle">${moja?'Izmeni ocenu':'Oceni'}: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora. Vide je svi. <a href="privatnost.html" target="_blank">Privatnost</a></p>
  <div class="pick" id="pick">${[1,2,3,4,5].map(i=>`<button aria-label="${i} od 5" data-v="${i}" class="${i<=z?'on':''}">★</button>`).join('')}</div><div class="pickLbl" id="pl">${z?OPIS[z]:'Izaberi broj zvezdica'}</div>
  <div class="toggles">${TAGOVI.map(t=>`<button aria-pressed="${tg.has(t)}" data-t="${t}">${t}</button>`).join('')}</div>
  <label for="kom">Komentar</label><textarea id="kom" maxlength="500" placeholder="Kako je prošao posao?">${moja?esc(moja.c):''}</textarea>
@@ -484,7 +487,7 @@ async function upisSe(){
   document.body.classList.add('open');return}
  sh.innerHTML=`<h3 id="sheetTitle">Upiši se kao majstor</h3><p class="sub">Besplatno. Pre objave te pozovemo da proverimo podatke.</p>
  ${poljaHtml({ime:user.displayName||''})}
- <label class="sagl"><input type="checkbox" id="pSag"><span>Saglasan sam da se moje ime, broj telefona, mesta u kojima radim i opis javno objave u aplikaciji Majstori Pazova.</span></label>
+ <label class="sagl"><input type="checkbox" id="pSag"><span>Saglasan sam da se moje ime, broj telefona, mesta u kojima radim i opis javno objave u aplikaciji Majstori Pazova (<a href="privatnost.html" target="_blank">politika privatnosti</a>).</span></label>
  <div class="err" id="err"></div>
  <button class="btn yellow" id="save">Pošalji prijavu</button>`;
  const procitaj=poveziPolja({}),err=document.getElementById('err'),save=document.getElementById('save');

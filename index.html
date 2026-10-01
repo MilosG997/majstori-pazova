@@ -467,7 +467,7 @@ function home(){
    <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option ${x===mesto?'selected':''}>${x}</option>`).join('')}</select></label>
    <label class="field">${svg('search')}<input id="q" type="search" placeholder="Traži majstora ili posao, npr. bojler" value="${esc(upit)}" aria-label="Pretraga"></label>
   </div></header><div class="ruler"></div>
-  <div class="note"><b>Prototip</b> Majstori i brojevi su izmišljeni. ${nalog()}</div>
+  <div class="note">${nalog()}</div>
   <main>${body}</main>`;
  document.getElementById('mesto').onchange=e=>{mesto=e.target.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}osvezi()};
  const qi=document.getElementById('q');qi.oninput=e=>{upit=e.target.value;const pos=qi.selectionStart;home();const n=document.getElementById('q');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}};

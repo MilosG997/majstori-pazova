@@ -95,6 +95,8 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .btn.green{background:var(--green);color:#fff}
 .btn.ghost{background:var(--card);border:1.5px solid var(--text);color:var(--text)}
 .btn.yellow{background:var(--yellow);color:var(--yellowInk);width:100%}
+a.btn{text-decoration:none}
+.mejl{font-size:1.1rem;font-weight:700;user-select:all;word-break:break-all}
 .btn.del{background:transparent;color:#C0392B;width:100%;height:44px;margin-top:8px}
 .btn:disabled{opacity:.6;cursor:wait}
 .phone{padding:10px 18px 0;font-size:.85rem;color:var(--muted)}
@@ -459,7 +461,7 @@ function home(){
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com">Kontakt</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
  }
  app.innerHTML=`<header class="top">
   <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
@@ -685,6 +687,17 @@ async function prijaviKomentar(mid,ruid){
   toast('Hvala! Komentar je prijavljen administratoru.')}
  catch(e){console.error(e);toast(e.code==='permission-denied'?'Već si prijavio ovaj komentar.':'Prijava nije uspela. Probaj ponovo.')}}
 
+// Kontakt: mailto ne radi na računaru bez podešenog mejl programa, zato nudimo i kopiranje adrese
+const KONTAKT='majstoripazova@gmail.com';
+function kontakt(){
+ sh.innerHTML=`<h3 id="sheetTitle">Kontakt</h3><p class="sub">Za pitanja, predloge i zahteve u vezi sa podacima piši nam na:</p>
+ <div class="status"><span class="mejl">${KONTAKT}</span></div>
+ <a class="btn yellow" href="mailto:${KONTAKT}">Otvori mejl aplikaciju</a>
+ <button class="btn del" id="kop" style="color:var(--text)">Kopiraj adresu</button>`;
+ document.getElementById('kop').onclick=async()=>{
+  try{await navigator.clipboard.writeText(KONTAKT);toast('Adresa je kopirana.')}
+  catch(e){const r=document.createRange();r.selectNodeContents(sh.querySelector('.mejl'));const x=getSelection();x.removeAllRanges();x.addRange(r);toast('Adresa je označena, kopiraj je sa Ctrl+C.')}};
+ document.body.classList.add('open')}
 function zatvori(){document.body.classList.remove('open');if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
@@ -700,7 +713,7 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
  if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,prijaviKomentar,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,prijaviKomentar,kontakt,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
 </script>

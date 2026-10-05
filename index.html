@@ -621,17 +621,9 @@ function izmeniForma(naslov,d,sacuvaj){
 
 // Jednokratno: pravi majstori (saglasni sa objavom imena i broja), admin ih ubacuje jednim klikom
 const NOVI=[
- {id:'marko-klacik',ime:'Marko Klaćik',kategorija:'voda',telefon:'0631687887',iskustvo:5,
-  mesta:['Stara Pazova','Nova Pazova','Golubinci','Vojka'],opis:'Vodoinstalaterski radovi.'},
- {id:'jovica-cvetkovic',ime:'Jovica Cvetković',kategorija:'struja',telefon:'0652008817',iskustvo:20,
-  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Belegiš','Golubinci','Vojka'],
-  opis:'Montaža i servis instalacija i uređaja, montaža rasvete, zamena tabli sa osiguračima i šemiranje ormana. Radi i u Batajnici i Zemunu.'},
- {id:'aleksandar-stefanovic',ime:'Aleksandar Stefanović',kategorija:'voda',telefon:'0692691117',iskustvo:10,
+ {id:'aleksandar-mrdja',ime:'Aleksandar Mrđa',kategorija:'klima',telefon:'063410419',iskustvo:0,
   mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
-  opis:'Adaptacije kupatila, zamena sanitarija i ventila, montaža nove sanitarije, instalacija i popravka kanalizacije. Radi na teritoriji cele opštine i šire.'},
- {id:'djordje-bezbradica',ime:'Đorđe Bezbradica',kategorija:'klima',telefon:'062349540',iskustvo:0,
-  mesta:['Stara Pazova','Stari Banovci'],
-  opis:'Frigo Bezbradica. Klima uređaji: prodaja, montaža, servis i dubinsko čišćenje. Servis i čišćenje bojlera. Vodoinstalacije: adaptacija i izrada novih kupatila. Grejanje: prepravka i izrada novih instalacija.'}
+  opis:'Servis i ugradnja klima uređaja. Radi na teritoriji cele opštine.'}
 ];
 const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};

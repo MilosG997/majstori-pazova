@@ -241,36 +241,6 @@ const KAT=[
  {id:'bravar',n:'Bravarija',s:'Bravar'},
  {id:'krov',n:'Krovovi',s:'Krovopokrivač'}
 ];
-// Probni (izmišljeni) majstori; admin ih jednim klikom ubacuje u praznu bazu
-const SEED=[
- {id:1,n:'Dragan Ilić',k:'struja',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:18,o:'Kućne instalacije, razvodne table, interfoni i rasveta.'},
- {id:2,n:'Miloš Stojanović',k:'struja',r:['Stara Pazova','Golubinci','Vojka'],g:9,o:'Popravke kvarova, zamena utičnica i prekidača, hitne intervencije.'},
- {id:3,n:'Nenad Jovanović',k:'struja',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:22,o:'Nove instalacije u novogradnji, gromobrani.'},
- {id:4,n:'Zoran Marković',k:'voda',r:['Stara Pazova','Nova Pazova'],g:15,o:'Kupatila, bojleri, odgušenje odvoda.'},
- {id:5,n:'Goran Petrović',k:'voda',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:11,o:'Vodovod i kanalizacija, priključci, curenja.'},
- {id:6,n:'Saša Nikolić',k:'voda',r:['Golubinci','Stara Pazova','Krnješevci'],g:7,o:'Zamena baterija, vodokotlića i ventila.'},
- {id:7,n:'Branko Đurić',k:'voda',r:['Belegiš','Surduk','Stari Banovci'],g:25,o:'Bunari, pumpe i hidrofori.'},
- {id:8,n:'Dejan Pavlović',k:'krecenje',r:['Stara Pazova','Nova Pazova','Golubinci'],g:14,o:'Krečenje stanova i kuća, gletovanje, dekorativne tehnike.'},
- {id:9,n:'Ivan Kovačević',k:'krecenje',r:['Nova Pazova','Novi Banovci'],g:6,o:'Brzo krečenje, farbanje stolarije i ograda.'},
- {id:10,n:'Marko Lazić',k:'krecenje',r:['Vojka','Krnješevci','Stara Pazova'],g:10,o:'Fasade i unutrašnji radovi.'},
- {id:11,n:'Aleksandar Todorović',k:'krecenje',r:['Stari Banovci','Banovci-Dunav','Belegiš'],g:19,o:'Gips, spušteni plafoni, krečenje.'},
- {id:12,n:'Stevan Radić',k:'keramika',r:['Krnješevci','Vojka','Stara Pazova'],g:21,o:'Kupatila i kuhinje, podno grejanje pod pločice.'},
- {id:13,n:'Milan Popović',k:'keramika',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:12,o:'Pločice, granitna keramika, terase.'},
- {id:14,n:'Vladimir Savić',k:'keramika',r:['Stara Pazova','Golubinci'],g:8,o:'Manje popravke i zamena pločica.'},
- {id:15,n:'Jovan Mitrović',k:'stolar',r:['Surduk','Belegiš','Stari Banovci'],g:30,o:'Kuhinje i plakari po meri, masivno drvo.'},
- {id:16,n:'Predrag Živković',k:'stolar',r:['Stara Pazova','Nova Pazova','Vojka'],g:13,o:'Vrata, prozori, popravke nameštaja.'},
- {id:17,n:'Slobodan Ristić',k:'tesar',r:['Belegiš','Surduk','Banovci-Dunav'],g:27,o:'Krovne konstrukcije, nadstrešnice, oplate.'},
- {id:18,n:'Dušan Babić',k:'tesar',r:['Banovci-Dunav','Novi Banovci','Nova Pazova'],g:16,o:'Drvene terase, sojenice, pergole.'},
- {id:19,n:'Radovan Stanković',k:'teski',r:['Golubinci','Stara Pazova','Krnješevci'],g:20,o:'Iskopi, rušenje, betoniranje, odvoz šuta.'},
- {id:20,n:'Nikola Vasić',k:'teski',r:['Nova Pazova','Novi Banovci','Stari Banovci'],g:5,o:'Utovar, istovar, čišćenje placa, ručni iskop.'},
- {id:21,n:'Željko Obradović',k:'teski',r:['Vojka','Krnješevci','Golubinci'],g:17,o:'Temelji, ploče, zidanje.'},
- {id:22,n:'Bojan Tomić',k:'klima',r:['Stara Pazova','Nova Pazova','Golubinci'],g:10,o:'Ugradnja i servis klima uređaja, toplotne pumpe.'},
- {id:23,n:'Uroš Filipović',k:'klima',r:['Novi Banovci','Stari Banovci','Banovci-Dunav'],g:8,o:'Radijatori, kotlovi, servis gasnih peći.'},
- {id:24,n:'Mladen Cvetković',k:'bravar',r:['Krnješevci','Vojka','Stara Pazova'],g:23,o:'Ograde, kapije, rešetke, nadstrešnice.'},
- {id:25,n:'Petar Janković',k:'bravar',r:['Stara Pazova','Nova Pazova'],g:9,o:'Zamena brava, otključavanje, sigurnosna vrata.'},
- {id:26,n:'Srđan Milošević',k:'krov',r:['Surduk','Belegiš','Stari Banovci'],g:24,o:'Crep, lim, oluci, sanacija prokišnjavanja.'},
- {id:27,n:'Vlada Kostić',k:'krov',r:['Nova Pazova','Stara Pazova','Novi Banovci'],g:11,o:'Hidroizolacija ravnih krovova, oluci.'}
-];
 const TAGOVI=["Stigao na vreme","Cena kao dogovorena","Čisto i uredno"];
 
 let M=[];        // majstori iz baze
@@ -432,12 +402,6 @@ const prijavljene=()=>{const g={};DO.forEach(d=>{const k=d.mid+'/'+d.ruid;(g[k]=
 const zaAdmina=()=>naCekanju().length+prijavljene().length;
 const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · ${user.emailVerified?'':'<button class="lnk" onclick="prijava()">Potvrdi email</button> · '}<button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
-async function ubaci(){
- if(!confirm(`Ubaciti ${SEED.length} probnih majstora u bazu?`))return;
- const b=writeBatch(db);
- SEED.forEach(m=>b.set(doc(db,'majstori','m'+String(m.id).padStart(2,'0')),{ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:'',aktivan:true}));
- try{await b.commit();toast('Majstori su ubačeni u bazu.')}
- catch(e){console.error(e);toast('Ubacivanje nije uspelo. Proveri da li su pravila baze postavljena.')}}
 
 // ---------- Prikaz ----------
 function item(m,i){const a=avg(m),n=oceneOd(m).length;
@@ -453,7 +417,7 @@ function home(){
  let body;
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
  else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
- else if(!M.length)body=`<div class="empty">Još nema majstora u bazi.</div>`+(jeAdmin()?`<div class="adm"><button class="btn yellow" onclick="ubaci()">Ubaci ${SEED.length} probnih majstora u bazu</button></div>`:'');
+ else if(!M.length)body=`<div class="empty">Još nema majstora u bazi.</div>`;
  else if(q){
   const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
@@ -623,8 +587,12 @@ function admin(nav){
   ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
   ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
+ const probni=probniMajstori();
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
+ ${probni.length?`<div class="ac flag"><div class="h"><b>Probni (izmišljeni) majstori: ${probni.length}</b></div>
+  <p>Brišu se trajno, zajedno sa njihovim recenzijama i prijavama komentara.</p>
+  <div class="ab"><button class="no" onclick="adm.obrisiProbne()">Obriši probne majstore (${probni.length})</button></div></div><div style="height:16px"></div>`:''}
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
  ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
@@ -649,6 +617,8 @@ function izmeniForma(naslov,d,sacuvaj){
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent='Sačuvaj'}};
  document.body.classList.add('open')}
 
+// Jednokratno: probni majstori iz prototipa imaju ID m01-m27
+const probniMajstori=()=>AM.filter(m=>/^m(0[1-9]|1[0-9]|2[0-7])$/.test(m.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -674,6 +644,15 @@ const adm={
   if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
+ obrisiProbne(){const probni=probniMajstori();if(!probni.length)return;
+  if(!confirm(`Trajno obrisati ${probni.length} probnih majstora i njihove recenzije?
+Ovo ne može da se vrati.`))return;
+  const b=writeBatch(db);
+  probni.forEach(m=>{
+   (OC[m.id]||[]).forEach(r=>b.delete(doc(db,'majstori',m.id,'ocene',r.uid)));
+   DO.filter(d=>d.mid===m.id).forEach(d=>b.delete(d.ref));
+   b.delete(doc(db,'majstori',m.id))});
+  pokusaj(()=>b.commit(),`Obrisano ${probni.length} probnih majstora.`)},
  uRedu(mid,uid){const b=writeBatch(db);
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}
@@ -713,7 +692,7 @@ function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selec
  if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,ubaci,upisSe,adm,prijaviKomentar,kontakt,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true)});
 prikazi(true);
 </script>

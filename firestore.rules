@@ -18,6 +18,26 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
 
+    // Podaci majstora koje upisuje administrator (dodavanje, izmena, sakrivanje)
+    function validanMajstor() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['ime', 'kategorija', 'mesta', 'iskustvo', 'opis', 'telefon',
+                               'aktivan', 'prijava', 'mesto', 'hitno', 'vikendom'])
+        && d.keys().hasAll(['ime', 'kategorija', 'mesta', 'aktivan'])
+        && d.ime is string && d.ime.size() >= 2 && d.ime.size() <= 60
+        && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',
+                            'tesar', 'teski', 'klima', 'bravar', 'krov']
+        && d.mesta is list && d.mesta.size() >= 1 && d.mesta.size() <= 10
+        && d.aktivan is bool
+        && (!('telefon' in d) || (d.telefon is string
+             && (d.telefon == '' || d.telefon.matches('^([+]381|0)[0-9]{8,9}$'))))
+        && (!('iskustvo' in d) || (d.iskustvo is int && d.iskustvo >= 0 && d.iskustvo <= 60))
+        && (!('opis' in d) || (d.opis is string && d.opis.size() <= 500))
+        && (!('mesto' in d) || (d.mesto is string && d.mesto.size() <= 40))
+        && (!('hitno' in d) || d.hitno is bool)
+        && (!('vikendom' in d) || d.vikendom is bool);
+    }
+
     function validnaOcena(mid) {
       let d = request.resource.data;
       return d.keys().hasOnly(['ocena', 'komentar', 'ime', 'oznake', 'uid', 'vreme'])
@@ -66,7 +86,8 @@ service cloud.firestore {
     // Javno se vide samo aktivni majstori; sakrivene vidi samo administrator
     match /majstori/{mid} {
       allow read: if resource.data.aktivan == true || jeAdmin();
-      allow write: if jeAdmin();
+      allow create, update: if jeAdmin() && validanMajstor();
+      allow delete: if jeAdmin();
 
       // Jedna ocena po korisniku po majstoru: ID dokumenta je uid korisnika
       match /ocene/{uid} {

@@ -7,6 +7,9 @@ $RECYCLE.BIN/
 .vscode/
 .idea/
 
+# Lokalno pokretanje (samo na ovom računaru, ne objavljuje se)
+pokreni-lokalno.bat
+
 # Lična podešavanja Claude-a
 .claude/settings.local.json
 

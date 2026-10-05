@@ -71,6 +71,8 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .item .info{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0}
 .item .name{font-weight:700;font-size:1.02rem}
 .item .meta{font-size:.82rem;color:var(--muted);margin-top:2px}
+.oz{display:inline-block;margin:6px 6px 0 0;font-size:.72rem;font-weight:700;border:1px solid var(--green);color:var(--green);padding:1px 7px;border-radius:5px}
+.prof .oz{border-color:var(--yellow);color:var(--yellow);margin-top:8px}
 .top1{display:inline-block;margin-top:6px;font-size:.72rem;font-weight:700;background:var(--yellow);color:var(--yellowInk);padding:2px 7px;border-radius:5px}
 .stars{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:.9rem;margin-top:4px}
 .stars i{font-style:normal;color:var(--star);letter-spacing:1px}
@@ -81,7 +83,7 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 
 .prof{background:var(--head);color:var(--headText);padding:6px 18px 22px}
 .prof h1{margin:0;font-size:1.8rem;font-weight:800;font-stretch:112%;line-height:1.1}
-.prof .kat{display:inline-block;margin-top:8px;background:var(--yellow);color:var(--yellowInk);font-weight:700;font-size:.8rem;padding:3px 8px;border-radius:5px}
+.prof .kat{display:inline-block;margin:8px 6px 0 0;background:var(--yellow);color:var(--yellowInk);font-weight:700;font-size:.8rem;padding:3px 8px;border-radius:5px}
 .big{display:flex;align-items:baseline;gap:10px;margin-top:16px}
 .big b{font-size:2.6rem;font-weight:800;font-stretch:115%;line-height:1}
 .big i{font-style:normal;color:var(--yellow);font-size:1.2rem;letter-spacing:2px}
@@ -189,7 +191,7 @@ a.btn{text-decoration:none}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,onSnapshot,setDoc,updateDoc,deleteDoc,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
 const firebaseConfig={
@@ -260,6 +262,7 @@ const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
 const fmt=a=>a.toFixed(1).replace('.',',');
 const uMestu=m=>!mesto||m.r.includes(mesto);
 // Telefon čitljivo: 0631687887 -> 063 168 7887
+const oznake=m=>(m.h?'<span class="oz">Izlazi hitno</span>':'')+(m.w?'<span class="oz">Radi vikendom</span>':'');
 const fmtTel=t=>{const d=String(t||'').replace(/\D/g,'');return /^0\d{9}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{4})$/,'$1 $2 $3'):/^0\d{8}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{3})$/,'$1 $2 $3'):String(t||'')};
 const godRec=n=>n%10===1&&n%100!==11?'godina':(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))?'godine':'godina';
 const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
@@ -279,7 +282,8 @@ function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
  else toast(`Broj telefona za ${m.n} još nije unet.`)}
 
 // ---------- Baza ----------
-const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true}};
+const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true,
+ mesto:String(x.mesto||''),h:x.hitno===true,w:x.vikendom===true}};
 // Javno se čitaju samo aktivni majstori (pravila baze ne puštaju sakrivene)
 onSnapshot(query(collection(db,'majstori'),where('aktivan','==',true)),s=>{
  M=s.docs.map(uMajstora).filter(m=>m.n&&kat(m.k));
@@ -412,7 +416,7 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
   <div class="name">${esc(m.n)}</div>
   <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}${m.g?`, ${m.g} god. iskustva`:''}</div>
   <div class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</div>
-  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
+  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}${m.h||m.w?`<div>${oznake(m)}</div>`:''}
  </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
 
 function home(){
@@ -421,7 +425,7 @@ function home(){
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
  else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
  else if(q){
-  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort(poOceni);
+  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q)||(q.length>=3&&m.h&&'hitno hitna hitne'.includes(q))||(q.length>=3&&m.w&&'vikend vikendom subota nedelja'.includes(q)))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
@@ -456,9 +460,9 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  const r=revs(m),a=avg(m),k=kat(m.k),moja=r.find(x=>x.mine);
  const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg.includes(t)).length}));
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
- <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
+ <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>${oznake(m)}
   <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
-  <ul class="facts"><li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
+  <ul class="facts">${m.mesto?`<li><span>Iz</span>${esc(m.mesto)}</li>`:''}<li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
  </section>
  <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
  <div class="phone">${m.t?'Telefon: '+esc(fmtTel(m.t)):'Broj telefona još nije unet.'}</div>
@@ -508,27 +512,33 @@ const STATUS={
  odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
  odbijen:['Prijava nije odobrena','Za pitanja piši na majstoripazova@gmail.com.']
 };
-// Polja majstora: ista forma za upis i za izmenu u admin panelu
-function poljaHtml(d){return `
+// Polja majstora: ista forma za upis i za admin panel; admin ima i mesto, hitno i vikendom
+function poljaHtml(d,admin){return `
  <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(d.ime||'')}">
+ ${admin?`<label for="pMesto">Mesto (odakle je)</label><input id="pMesto" list="mestaLista" maxlength="40" placeholder="npr. Nova Pazova" value="${esc(d.mesto||'')}">
+ <datalist id="mestaLista">${MESTA.map(m=>`<option value="${m}">`).join('')}</datalist>`:''}
  <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel" value="${esc(d.telefon||'')}">
- <label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
+ <label for="pKat">${admin?'Kategorija':'Čime se baviš'}</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
  <label>Mesta u kojima radi</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="${(d.mesta||[]).includes(m)}" data-m="${m}">${m}</button>`).join('')}</div>
- <label for="pIsk">Godine iskustva</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60" value="${d.iskustvo??''}">
- <label for="pOpis">O sebi i svom iskustvu</label><textarea id="pOpis" maxlength="300" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>`}
+ <label for="pIsk">Godine iskustva${admin?' (0 ako nije poznato)':''}</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60" value="${d.iskustvo??''}">
+ <label for="pOpis">${admin?'Kratak opis':'O sebi i svom iskustvu'}</label><textarea id="pOpis" maxlength="${admin?500:300}" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>
+ ${admin?`<label class="sagl"><input type="checkbox" id="pHitno" ${d.hitno?'checked':''}><span>Izlazi na hitne intervencije</span></label>
+ <label class="sagl"><input type="checkbox" id="pVikend" ${d.vikendom?'checked':''}><span>Radi vikendom</span></label>`:''}`}
 function poveziPolja(d){const mesta=new Set(d.mesta||[]);
  sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
- // Vraća [podaci, greška]; admin sme da ostavi prazan telefon i kratak opis
- return strogo=>{const $=id=>document.getElementById(id);
+ // Vraća [podaci, greška]; strogo = obavezan telefon i duži opis (javna forma)
+ return (strogo,traziTel)=>{const $=id=>document.getElementById(id);
   const ime=$('pIme').value.trim().replace(/\s+/g,' '),telefon=normTel($('pTel').value),kategorija=$('pKat').value,
    iskustvo=$('pIsk').value===''?NaN:Number($('pIsk').value),opis=$('pOpis').value.trim();
   const g=ime.length<3?'Upiši ime i prezime.'
-   :(strogo||telefon)&&!telOk(telefon)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
-   :!kategorija?'Izaberi čime se bavi.'
+   :(strogo||traziTel||telefon)&&!telOk(telefon)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
+   :!kategorija?'Izaberi kategoriju.'
    :!mesta.size?'Izaberi bar jedno mesto.'
    :!Number.isInteger(iskustvo)||iskustvo<0||iskustvo>60?'Upiši godine iskustva (broj od 0 do 60).'
    :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
-  return [{ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis},g]}}
+  const x={ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis};
+  if($('pMesto'))Object.assign(x,{mesto:$('pMesto').value.trim().replace(/\s+/g,' '),hitno:$('pHitno').checked,vikendom:$('pVikend').checked});
+  return [x,g]}}
 
 // Obaveštenje adminu preko Netlify Forms; ako ne uspe, prijava je svejedno u bazi
 function obavestiAdmina(d){
@@ -573,7 +583,7 @@ const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
 function admin(nav){
  if(!jeAdmin()){app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
   <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
- const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen');
+ const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen'),odo=PR.filter(p=>p.status==='odobren');
  const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
  const imeM=id=>(AM.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
  const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
@@ -589,12 +599,10 @@ function admin(nav){
   ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
   ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
- const novi=noviZaUbacivanje();
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
- ${novi.length?`<div class="ac"><div class="h"><b>Novi majstori za ubacivanje: ${novi.length}</b></div>
-  <p>${novi.map(n=>esc(n.ime)+' · '+esc(kat(n.kategorija).s)).join('<br>')}</p>
-  <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${novi.length})</button></div></div><div style="height:16px"></div>`:''}
+ <button class="btn yellow" onclick="adm.dodaj()">+ Dodaj novog majstora</button>
+ <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
  ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
@@ -603,29 +611,31 @@ function admin(nav){
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
-  <div class="m">${esc((kat(m.k)||{}).s||m.k)} · ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
+  <div class="m">${esc((kat(m.k)||{}).s||m.k)}${m.mesto?' · iz: '+esc(m.mesto):''}${m.h?' · hitno':''}${m.w?' · vikendom':''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
+ ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
+ <p class="sub2">„Odveži nalog” briše prijavu (i email sa nje). Majstor ostaje u aplikaciji sa svim podacima, a nalog može ponovo da se prijavi.</p>
+ ${odo.map(p=>`<div class="ac"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
+  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</div><div class="m">Nalog: ${esc(p.email||'')}</div>
+  <div class="ab"><button onclick="adm.odvezi('${p.uid}')">Odveži nalog</button></div></div>`).join('')}`:''}
  ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
  </main>`;if(nav)scrollTo(0,0)}
 
-function izmeniForma(naslov,d,sacuvaj){
- sh.innerHTML=`<h3 id="sheetTitle">${esc(naslov)}</h3>${poljaHtml(d)}<div class="err" id="err"></div><button class="btn yellow" id="save">Sačuvaj</button>`;
+function izmeniForma(naslov,d,sacuvaj,o={}){
+ sh.innerHTML=`<h3 id="sheetTitle">${esc(naslov)}</h3>${poljaHtml(d,o.admin)}
+ ${o.saglasnost?'<label class="sagl"><input type="checkbox" id="pSag"><span>Majstor je pristao da se njegovo ime i broj telefona javno objave u aplikaciji.</span></label>':''}
+ <div class="err" id="err"></div><button class="btn yellow" id="save">${o.dugme||'Sačuvaj'}</button>`;
  const procitaj=poveziPolja(d),err=document.getElementById('err'),save=document.getElementById('save');
- save.onclick=async()=>{const [x,g]=procitaj(false);if(g){err.textContent=g;return}
-  save.disabled=true;save.textContent='Čuvam…';
-  try{await sacuvaj(x);zatvori();toast('Sačuvano.')}
-  catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent='Sačuvaj'}};
- document.body.classList.add('open')}
+ save.onclick=async()=>{let [x,g]=procitaj(false,o.traziTel);
+  if(!g&&o.saglasnost&&!document.getElementById('pSag').checked)g='Potvrdi da je majstor pristao na objavu imena i broja.';
+  if(g){err.textContent=g;return}
+  const tekst=save.textContent;save.disabled=true;save.textContent='Čuvam…';
+  try{await sacuvaj(x);zatvori();toast(o.uspeh||'Sačuvano.')}
+  catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent=tekst}};
+ document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}
 
-// Jednokratno: pravi majstori (saglasni sa objavom imena i broja), admin ih ubacuje jednim klikom
-const NOVI=[
- {id:'aleksandar-mrdja',ime:'Aleksandar Mrđa',kategorija:'klima',telefon:'063410419',iskustvo:0,
-  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
-  opis:'Servis i ugradnja klima uređaja. Radi na teritoriji cele opštine.'}
-];
-const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -643,7 +653,23 @@ const adm={
  obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
   pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
  izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
-  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o},x=>updateDoc(doc(db,'majstori',id),x))},
+  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto,hitno:m.h,vikendom:m.w},
+   x=>updateDoc(doc(db,'majstori',id),x),{admin:true})},
+ // Admin dodaje majstora direktno: odmah odobren, bez veze sa bilo kojim nalogom
+ dodaj(){izmeniForma('Novi majstor',{},x=>setDoc(doc(collection(db,'majstori')),{...x,aktivan:true}),
+  {admin:true,traziTel:true,saglasnost:true,dugme:'Dodaj majstora',uspeh:'Majstor je dodat i vidi se u aplikaciji.'})},
+ // Briše prijavu (sa emailom naloga) i skida vezu majstora sa nalogom; bez ocena majstor dobija i novi ID
+ odvezi(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
+  const m=AM.find(x=>x.id===p.majstor);
+  if(!confirm(`Odvezati nalog ${p.email||''} od majstora ${p.ime}?\nMajstor ostaje u aplikaciji, a prijava se briše.`))return;
+  const b=writeBatch(db);
+  if(m&&!oceneOd(m).length){
+   const x={ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:m.t,aktivan:m.a};
+   if(m.mesto)x.mesto=m.mesto;if(m.h)x.hitno=true;if(m.w)x.vikendom=true;
+   b.set(doc(collection(db,'majstori')),x);b.delete(doc(db,'majstori',m.id))}
+  else if(m)b.update(doc(db,'majstori',m.id),{prijava:deleteField()});
+  b.delete(doc(db,'prijave',uid));
+  pokusaj(()=>b.commit(),'Nalog je odvezan. Majstor ostaje u aplikaciji.')},
  prikazi(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'majstori',id),{aktivan:vidljiv}),vidljiv?'Majstor se ponovo vidi u aplikaciji.':'Majstor je sakriven.')},
  // Briše recenziju zajedno sa njenim dojavama (Firestore ih ne briše sam)
  obrisiRecenziju(mid,uid){if(!confirm('Trajno obrisati ovu recenziju?'))return;
@@ -651,11 +677,6 @@ const adm={
   if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
- ubaciNove(){const novi=noviZaUbacivanje();if(!novi.length)return;
-  if(!confirm(`Ubaciti ${novi.length} majstora u aplikaciju?\n\n${novi.map(n=>n.ime).join('\n')}`))return;
-  const b=writeBatch(db);
-  novi.forEach(({id,...d})=>b.set(doc(db,'majstori',id),{...d,aktivan:true}));
-  pokusaj(()=>b.commit(),`Ubačeno ${novi.length} majstora.`)},
  uRedu(mid,uid){const b=writeBatch(db);
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}

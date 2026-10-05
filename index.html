@@ -283,7 +283,7 @@ function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
 
 // ---------- Baza ----------
 const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true,
- mesto:String(x.mesto||''),h:x.hitno===true,w:x.vikendom===true}};
+ mesto:String(x.mesto||''),h:x.hitno===true,w:x.vikendom===true,prijava:String(x.prijava||'')}};
 // Javno se čitaju samo aktivni majstori (pravila baze ne puštaju sakrivene)
 onSnapshot(query(collection(db,'majstori'),where('aktivan','==',true)),s=>{
  M=s.docs.map(uMajstora).filter(m=>m.n&&kat(m.k));
@@ -612,7 +612,7 @@ function admin(nav){
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc((kat(m.k)||{}).s||m.k)}${m.mesto?' · iz: '+esc(m.mesto):''}${m.h?' · hitno':''}${m.w?' · vikendom':''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
-  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button></div></div>`).join('')}
+  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
  ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
@@ -659,9 +659,9 @@ const adm={
  dodaj(){izmeniForma('Novi majstor',{},x=>setDoc(doc(collection(db,'majstori')),{...x,aktivan:true}),
   {admin:true,traziTel:true,saglasnost:true,dugme:'Dodaj majstora',uspeh:'Majstor je dodat i vidi se u aplikaciji.'})},
  // Briše prijavu (sa emailom naloga) i skida vezu majstora sa nalogom; bez ocena majstor dobija i novi ID
- odvezi(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
-  const m=AM.find(x=>x.id===p.majstor);
-  if(!confirm(`Odvezati nalog ${p.email||''} od majstora ${p.ime}?\nMajstor ostaje u aplikaciji, a prijava se briše.`))return;
+ odvezi(uid,mid){const p=PR.find(x=>x.uid===uid),m=AM.find(x=>x.id===(mid||(p&&p.majstor)));
+  if(!p&&!m)return;
+  if(!confirm(`Odvezati nalog${p&&p.email?' '+p.email:''} od majstora ${m?m.n:p.ime}?\nMajstor ostaje u aplikaciji, a prijava se briše.`))return;
   const b=writeBatch(db);
   if(m&&!oceneOd(m).length){
    const x={ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:m.t,aktivan:m.a};
@@ -670,6 +670,16 @@ const adm={
   else if(m)b.update(doc(db,'majstori',m.id),{prijava:deleteField()});
   b.delete(doc(db,'prijave',uid));
   pokusaj(()=>b.commit(),'Nalog je odvezan. Majstor ostaje u aplikaciji.')},
+ // Trajno briše majstora sa ocenama i dojavama (i prijavu, ako je bio vezan za nalog)
+ obrisiMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
+  const n=oceneOd(m).length;
+  if(!confirm(`Trajno obrisati majstora ${m.n}${n?` i ${n} ${ocenaRec(n)}`:''}?\nOvo ne može da se vrati. Ako samo hoćeš da ga skloniš iz aplikacije, izaberi „Sakrij”.`))return;
+  const b=writeBatch(db);
+  oceneOd(m).forEach(r=>b.delete(doc(db,'majstori',id,'ocene',r.uid)));
+  DO.filter(d=>d.mid===id).forEach(d=>b.delete(d.ref));
+  if(m.prijava)b.delete(doc(db,'prijave',m.prijava));
+  b.delete(doc(db,'majstori',id));
+  pokusaj(()=>b.commit(),`${m.n} je obrisan.`)},
  prikazi(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'majstori',id),{aktivan:vidljiv}),vidljiv?'Majstor se ponovo vidi u aplikaciji.':'Majstor je sakriven.')},
  // Briše recenziju zajedno sa njenim dojavama (Firestore ih ne briše sam)
  obrisiRecenziju(mid,uid){if(!confirm('Trajno obrisati ovu recenziju?'))return;

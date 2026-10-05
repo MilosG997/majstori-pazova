@@ -259,6 +259,9 @@ const poOceni=(a,b)=>(avg(b)-avg(a))||(oceneOd(b).length-oceneOd(a).length)||a.n
 const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
 const fmt=a=>a.toFixed(1).replace('.',',');
 const uMestu=m=>!mesto||m.r.includes(mesto);
+// Telefon čitljivo: 0631687887 -> 063 168 7887
+const fmtTel=t=>{const d=String(t||'').replace(/\D/g,'');return /^0\d{9}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{4})$/,'$1 $2 $3'):/^0\d{8}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{3})$/,'$1 $2 $3'):String(t||'')};
+const godRec=n=>n%10===1&&n%100!==11?'godina':(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))?'godine':'godina';
 const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
 // Ime uz recenziju: "Ime P." sa Google naloga ili iz registracije
 const imeNaloga=()=>kratkoIme(user&&user.displayName)||'Korisnik';
@@ -407,7 +410,7 @@ const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onc
 function item(m,i){const a=avg(m),n=oceneOd(m).length;
  return `<div class="item"><button class="info" onclick="location.hash='#/m/${m.id}'">
   <div class="name">${esc(m.n)}</div>
-  <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}, ${m.g} god. iskustva</div>
+  <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}${m.g?`, ${m.g} god. iskustva`:''}</div>
   <div class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</div>
   ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
  </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
@@ -455,10 +458,10 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
  <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
   <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
-  <ul class="facts"><li><span>Radi u</span>${esc(m.r.join(', '))}</li><li><span>Iskustvo</span>${m.g} godina</li><li><span>Radi</span>${esc(m.o)}</li></ul>
+  <ul class="facts"><li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
  </section>
  <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
- <div class="phone">${m.t?'Telefon: '+esc(m.t):'Broj telefona još nije unet.'}</div>
+ <div class="phone">${m.t?'Telefon: '+esc(fmtTel(m.t)):'Broj telefona još nije unet.'}</div>
  ${r.length?`<div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>`:''}
  <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${x.mine?'':`<button class="rep" onclick="prijaviKomentar('${m.id}','${x.uid}')">Prijavi komentar</button>`}</div>`).join('')
   :'<div class="empty">Još nema ocena. Budi prvi koji će oceniti ovog majstora.</div>'}</div>
@@ -543,7 +546,7 @@ async function upisSe(){
   const [nas,txt]=STATUS[p.status]||STATUS.na_cekanju;
   sh.innerHTML=`<h3 id="sheetTitle">Tvoja prijava</h3>
   <div class="status"><b>${nas}</b>${txt}</div>
-  <p class="sub">${esc(p.ime)} · ${esc((kat(p.kategorija)||{}).s||'')} · ${esc(p.telefon)}</p>
+  <p class="sub">${esc(p.ime)} · ${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</p>
   <button class="btn yellow" id="ok">U redu</button>`;
   document.getElementById('ok').onclick=zatvori;
   document.body.classList.add('open');return}
@@ -575,7 +578,7 @@ function admin(nav){
  const imeM=id=>(AM.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
  const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
  const prijavaKartica=(p,odbijena)=>`<div class="ac ${odbijena?'off':''}"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
-  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(p.telefon)}</div>
+  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(fmtTel(p.telefon))}</div>
   <div class="m">${esc((p.mesta||[]).join(', '))}</div><div class="m">${esc(p.email||'')}</div>
   <p>${esc(p.opis)}</p>
   <div class="ab">${telLink(p.telefon)}${odbijena
@@ -586,8 +589,12 @@ function admin(nav){
   ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
   ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
+ const novi=noviZaUbacivanje();
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
+ ${novi.length?`<div class="ac"><div class="h"><b>Novi majstori za ubacivanje: ${novi.length}</b></div>
+  <p>${novi.map(n=>esc(n.ime)+' · '+esc(kat(n.kategorija).s)).join('<br>')}</p>
+  <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${novi.length})</button></div></div><div style="height:16px"></div>`:''}
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
  ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
@@ -596,7 +603,7 @@ function admin(nav){
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
-  <div class="m">${esc((kat(m.k)||{}).s||m.k)} · ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(m.t):'bez telefona'}</div>
+  <div class="m">${esc((kat(m.k)||{}).s||m.k)} · ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
@@ -612,6 +619,21 @@ function izmeniForma(naslov,d,sacuvaj){
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent='Sačuvaj'}};
  document.body.classList.add('open')}
 
+// Jednokratno: pravi majstori (saglasni sa objavom imena i broja), admin ih ubacuje jednim klikom
+const NOVI=[
+ {id:'marko-klacik',ime:'Marko Klaćik',kategorija:'voda',telefon:'0631687887',iskustvo:5,
+  mesta:['Stara Pazova','Nova Pazova','Golubinci','Vojka'],opis:'Vodoinstalaterski radovi.'},
+ {id:'jovica-cvetkovic',ime:'Jovica Cvetković',kategorija:'struja',telefon:'0652008817',iskustvo:20,
+  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Belegiš','Golubinci','Vojka'],
+  opis:'Montaža i servis instalacija i uređaja, montaža rasvete, zamena tabli sa osiguračima i šemiranje ormana. Radi i u Batajnici i Zemunu.'},
+ {id:'aleksandar-stefanovic',ime:'Aleksandar Stefanović',kategorija:'voda',telefon:'0692691117',iskustvo:10,
+  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Adaptacije kupatila, zamena sanitarija i ventila, montaža nove sanitarije, instalacija i popravka kanalizacije. Radi na teritoriji cele opštine i šire.'},
+ {id:'djordje-bezbradica',ime:'Đorđe Bezbradica',kategorija:'klima',telefon:'062349540',iskustvo:0,
+  mesta:['Stara Pazova','Stari Banovci'],
+  opis:'Frigo Bezbradica. Klima uređaji: prodaja, montaža, servis i dubinsko čišćenje. Servis i čišćenje bojlera. Vodoinstalacije: adaptacija i izrada novih kupatila. Grejanje: prepravka i izrada novih instalacija.'}
+];
+const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -637,6 +659,11 @@ const adm={
   if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
+ ubaciNove(){const novi=noviZaUbacivanje();if(!novi.length)return;
+  if(!confirm(`Ubaciti ${novi.length} majstora u aplikaciju?\n\n${novi.map(n=>n.ime).join('\n')}`))return;
+  const b=writeBatch(db);
+  novi.forEach(({id,...d})=>b.set(doc(db,'majstori',id),{...d,aktivan:true}));
+  pokusaj(()=>b.commit(),`Ubačeno ${novi.length} majstora.`)},
  uRedu(mid,uid){const b=writeBatch(db);
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}

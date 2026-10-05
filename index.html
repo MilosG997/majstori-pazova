@@ -71,8 +71,6 @@ h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
 .item .info{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0}
 .item .name{font-weight:700;font-size:1.02rem}
 .item .meta{font-size:.82rem;color:var(--muted);margin-top:2px}
-.oz{display:inline-block;margin:6px 6px 0 0;font-size:.72rem;font-weight:700;border:1px solid var(--green);color:var(--green);padding:1px 7px;border-radius:5px}
-.prof .oz{border-color:var(--yellow);color:var(--yellow);margin-top:8px}
 .top1{display:inline-block;margin-top:6px;font-size:.72rem;font-weight:700;background:var(--yellow);color:var(--yellowInk);padding:2px 7px;border-radius:5px}
 .stars{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:.9rem;margin-top:4px}
 .stars i{font-style:normal;color:var(--star);letter-spacing:1px}
@@ -262,7 +260,6 @@ const zv=a=>'★'.repeat(Math.round(a))+'☆'.repeat(5-Math.round(a));
 const fmt=a=>a.toFixed(1).replace('.',',');
 const uMestu=m=>!mesto||m.r.includes(mesto);
 // Telefon čitljivo: 0631687887 -> 063 168 7887
-const oznake=m=>(m.h?'<span class="oz">Izlazi hitno</span>':'')+(m.w?'<span class="oz">Radi vikendom</span>':'');
 const fmtTel=t=>{const d=String(t||'').replace(/\D/g,'');return /^0\d{9}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{4})$/,'$1 $2 $3'):/^0\d{8}$/.test(d)?d.replace(/^(\d{3})(\d{3})(\d{3})$/,'$1 $2 $3'):String(t||'')};
 const godRec=n=>n%10===1&&n%100!==11?'godina':(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))?'godine':'godina';
 const ocenaRec=n=>n===1?'ocena':(n%10>=2&&n%10<=4&&(n<12||n>14))?'ocene':'ocena';
@@ -283,7 +280,7 @@ function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
 
 // ---------- Baza ----------
 const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true,
- mesto:String(x.mesto||''),h:x.hitno===true,w:x.vikendom===true,prijava:String(x.prijava||'')}};
+ mesto:String(x.mesto||''),prijava:String(x.prijava||'')}};
 // Javno se čitaju samo aktivni majstori (pravila baze ne puštaju sakrivene)
 onSnapshot(query(collection(db,'majstori'),where('aktivan','==',true)),s=>{
  M=s.docs.map(uMajstora).filter(m=>m.n&&kat(m.k));
@@ -416,7 +413,7 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
   <div class="name">${esc(m.n)}</div>
   <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}${m.g?`, ${m.g} god. iskustva`:''}</div>
   <div class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</div>
-  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}${m.h||m.w?`<div>${oznake(m)}</div>`:''}
+  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
  </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
 
 function home(){
@@ -425,7 +422,7 @@ function home(){
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
  else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
  else if(q){
-  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q)||(q.length>=3&&m.h&&'hitno hitna hitne'.includes(q))||(q.length>=3&&m.w&&'vikend vikendom subota nedelja'.includes(q)))).sort(poOceni);
+  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
@@ -460,7 +457,7 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  const r=revs(m),a=avg(m),k=kat(m.k),moja=r.find(x=>x.mine);
  const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg.includes(t)).length}));
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
- <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>${oznake(m)}
+ <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
   <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
   <ul class="facts">${m.mesto?`<li><span>Iz</span>${esc(m.mesto)}</li>`:''}<li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
  </section>
@@ -512,7 +509,7 @@ const STATUS={
  odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
  odbijen:['Prijava nije odobrena','Za pitanja piši na majstoripazova@gmail.com.']
 };
-// Polja majstora: ista forma za upis i za admin panel; admin ima i mesto, hitno i vikendom
+// Polja majstora: ista forma za upis i za admin panel; admin ima i mesto odakle je majstor
 function poljaHtml(d,admin){return `
  <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(d.ime||'')}">
  ${admin?`<label for="pMesto">Mesto (odakle je)</label><input id="pMesto" list="mestaLista" maxlength="40" placeholder="npr. Nova Pazova" value="${esc(d.mesto||'')}">
@@ -521,9 +518,7 @@ function poljaHtml(d,admin){return `
  <label for="pKat">${admin?'Kategorija':'Čime se baviš'}</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
  <label>Mesta u kojima radi</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="${(d.mesta||[]).includes(m)}" data-m="${m}">${m}</button>`).join('')}</div>
  <label for="pIsk">Godine iskustva${admin?' (0 ako nije poznato)':''}</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60" value="${d.iskustvo??''}">
- <label for="pOpis">${admin?'Kratak opis':'O sebi i svom iskustvu'}</label><textarea id="pOpis" maxlength="${admin?500:300}" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>
- ${admin?`<label class="sagl"><input type="checkbox" id="pHitno" ${d.hitno?'checked':''}><span>Izlazi na hitne intervencije</span></label>
- <label class="sagl"><input type="checkbox" id="pVikend" ${d.vikendom?'checked':''}><span>Radi vikendom</span></label>`:''}`}
+ <label for="pOpis">${admin?'Kratak opis':'O sebi i svom iskustvu'}</label><textarea id="pOpis" maxlength="${admin?500:300}" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>`}
 function poveziPolja(d){const mesta=new Set(d.mesta||[]);
  sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
  // Vraća [podaci, greška]; strogo = obavezan telefon i duži opis (javna forma)
@@ -537,7 +532,7 @@ function poveziPolja(d){const mesta=new Set(d.mesta||[]);
    :!Number.isInteger(iskustvo)||iskustvo<0||iskustvo>60?'Upiši godine iskustva (broj od 0 do 60).'
    :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
   const x={ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis};
-  if($('pMesto'))Object.assign(x,{mesto:$('pMesto').value.trim().replace(/\s+/g,' '),hitno:$('pHitno').checked,vikendom:$('pVikend').checked});
+  if($('pMesto'))x.mesto=$('pMesto').value.trim().replace(/\s+/g,' ');
   return [x,g]}}
 
 // Obaveštenje adminu preko Netlify Forms; ako ne uspe, prijava je svejedno u bazi
@@ -611,7 +606,7 @@ function admin(nav){
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
-  <div class="m">${esc((kat(m.k)||{}).s||m.k)}${m.mesto?' · iz: '+esc(m.mesto):''}${m.h?' · hitno':''}${m.w?' · vikendom':''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
+  <div class="m">${esc((kat(m.k)||{}).s||m.k)}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
@@ -653,7 +648,7 @@ const adm={
  obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
   pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
  izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
-  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto,hitno:m.h,vikendom:m.w},
+  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto},
    x=>updateDoc(doc(db,'majstori',id),x),{admin:true})},
  // Admin dodaje majstora direktno: odmah odobren, bez veze sa bilo kojim nalogom
  dodaj(){izmeniForma('Novi majstor',{},x=>setDoc(doc(collection(db,'majstori')),{...x,aktivan:true}),
@@ -665,7 +660,7 @@ const adm={
   const b=writeBatch(db);
   if(m&&!oceneOd(m).length){
    const x={ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:m.t,aktivan:m.a};
-   if(m.mesto)x.mesto=m.mesto;if(m.h)x.hitno=true;if(m.w)x.vikendom=true;
+   if(m.mesto)x.mesto=m.mesto;
    b.set(doc(collection(db,'majstori')),x);b.delete(doc(db,'majstori',m.id))}
   else if(m)b.update(doc(db,'majstori',m.id),{prijava:deleteField()});
   b.delete(doc(db,'prijave',uid));

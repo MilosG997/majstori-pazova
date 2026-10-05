@@ -417,7 +417,6 @@ function home(){
  let body;
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
  else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
- else if(!M.length)body=`<div class="empty">Još nema majstora u bazi.</div>`;
  else if(q){
   const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
@@ -446,7 +445,7 @@ function kategorija(id,nav){const k=kat(id);if(!k)return home();
  const list=M.filter(m=>m.k===id&&uMestu(m)).sort(poOceni);
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">${k.n}</div></div>
  <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
- ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora za ${k.n.toLowerCase()}${mesto?' u mestu '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
+ ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora u kategoriji „${k.n}“${mesto?' za mesto '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
  </main>`;if(nav)scrollTo(0,0)}
 
 function profil(id,nav){const m=M.find(x=>x.id===id);
@@ -587,12 +586,8 @@ function admin(nav){
   ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
   ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
- const probni=probniMajstori();
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
- ${probni.length?`<div class="ac flag"><div class="h"><b>Probni (izmišljeni) majstori: ${probni.length}</b></div>
-  <p>Brišu se trajno, zajedno sa njihovim recenzijama i prijavama komentara.</p>
-  <div class="ab"><button class="no" onclick="adm.obrisiProbne()">Obriši probne majstore (${probni.length})</button></div></div><div style="height:16px"></div>`:''}
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
  ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
@@ -617,8 +612,6 @@ function izmeniForma(naslov,d,sacuvaj){
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent='Sačuvaj'}};
  document.body.classList.add('open')}
 
-// Jednokratno: probni majstori iz prototipa imaju ID m01-m27
-const probniMajstori=()=>AM.filter(m=>/^m(0[1-9]|1[0-9]|2[0-7])$/.test(m.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -644,15 +637,6 @@ const adm={
   if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
- obrisiProbne(){const probni=probniMajstori();if(!probni.length)return;
-  if(!confirm(`Trajno obrisati ${probni.length} probnih majstora i njihove recenzije?
-Ovo ne može da se vrati.`))return;
-  const b=writeBatch(db);
-  probni.forEach(m=>{
-   (OC[m.id]||[]).forEach(r=>b.delete(doc(db,'majstori',m.id,'ocene',r.uid)));
-   DO.filter(d=>d.mid===m.id).forEach(d=>b.delete(d.ref));
-   b.delete(doc(db,'majstori',m.id))});
-  pokusaj(()=>b.commit(),`Obrisano ${probni.length} probnih majstora.`)},
  uRedu(mid,uid){const b=writeBatch(db);
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}

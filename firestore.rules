@@ -21,13 +21,18 @@ service cloud.firestore {
     // Podaci majstora koje upisuje administrator (dodavanje, izmena, sakrivanje)
     function validanMajstor() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['ime', 'kategorija', 'mesta', 'iskustvo', 'opis', 'telefon',
-                               'aktivan', 'prijava', 'mesto', 'hitno', 'vikendom'])
+      return d.keys().hasOnly(['ime', 'kategorija', 'kategorije', 'mesta', 'iskustvo', 'opis',
+                               'telefon', 'aktivan', 'prijava', 'mesto', 'hitno', 'vikendom'])
         && d.keys().hasAll(['ime', 'kategorija', 'mesta', 'aktivan'])
         && d.ime is string && d.ime.size() >= 2 && d.ime.size() <= 60
         && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',
                             'gips', 'teski', 'klima', 'bravar', 'krov']
         && d.mesta is list && d.mesta.size() >= 1 && d.mesta.size() <= 10
+        && (!('kategorije' in d) || (d.kategorije is list
+             && d.kategorije.size() >= 1 && d.kategorije.size() <= 10
+             && d.kategorije.toSet().hasOnly(['struja', 'voda', 'krecenje', 'keramika', 'stolar',
+                                              'gips', 'teski', 'klima', 'bravar', 'krov'])
+             && d.kategorija in d.kategorije))
         && d.aktivan is bool
         && (!('telefon' in d) || (d.telefon is string
              && (d.telefon == '' || d.telefon.matches('^([+]381|0)[0-9]{8,9}$'))))

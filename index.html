@@ -279,11 +279,13 @@ function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
  else toast(`Broj telefona za ${m.n} još nije unet.`)}
 
 // ---------- Baza ----------
-const uMajstora=d=>{const x=d.data();return{id:d.id,n:String(x.ime||''),k:x.kategorija,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true,
+// Majstor može biti u više kategorija (polje kategorije); kategorija je glavna, prva po redu
+const sveKat=x=>(Array.isArray(x.kategorije)&&x.kategorije.length?x.kategorije:[x.kategorija]).filter(id=>kat(id));
+const uMajstora=d=>{const x=d.data(),ks=sveKat(x);return{id:d.id,n:String(x.ime||''),k:kat(x.kategorija)?x.kategorija:ks[0],ks,r:Array.isArray(x.mesta)?x.mesta:[],g:x.iskustvo||0,o:String(x.opis||''),t:String(x.telefon||''),a:x.aktivan===true,
  mesto:String(x.mesto||''),prijava:String(x.prijava||'')}};
 // Javno se čitaju samo aktivni majstori (pravila baze ne puštaju sakrivene)
 onSnapshot(query(collection(db,'majstori'),where('aktivan','==',true)),s=>{
- M=s.docs.map(uMajstora).filter(m=>m.n&&kat(m.k));
+ M=s.docs.map(uMajstora).filter(m=>m.n&&m.ks.length);
  ucitano=true;greska='';osvezi();
 },e=>{console.error(e);ucitano=true;
  greska=e.code==='permission-denied'?'Baza je zaključana: pravila baze (firestore.rules) još nisu postavljena u Firebase konzoli.':'Ne mogu da učitam majstore. Proveri internet vezu i osveži stranu.';osvezi()});
@@ -422,10 +424,10 @@ function home(){
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
  else if(greska)body=`<div class="empty">${esc(greska)}</div>`;
  else if(q){
-  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||kat(m.k).n.toLowerCase().includes(q)||kat(m.k).s.toLowerCase().includes(q)||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q))).sort(poOceni);
+  const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||m.ks.some(id=>kat(id).n.toLowerCase().includes(q)||kat(id).s.toLowerCase().includes(q))||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
  }else{
-  body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.k===k.id&&uMestu(m)).length;
+  body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.ks.includes(k.id)&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
    <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
@@ -446,7 +448,7 @@ const ucitavam=()=>{app.innerHTML=`<main><div class="empty">Učitavam…</div></
 
 function kategorija(id,nav){const k=kat(id);if(!k)return home();
  if(!ucitano)return ucitavam();
- const list=M.filter(m=>m.k===id&&uMestu(m)).sort(poOceni);
+ const list=M.filter(m=>m.ks.includes(id)&&uMestu(m)).sort(poOceni);
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">${k.n}</div></div>
  <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
  ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora u kategoriji „${k.n}“${mesto?' za mesto '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
@@ -454,10 +456,10 @@ function kategorija(id,nav){const k=kat(id);if(!k)return home();
 
 function profil(id,nav){const m=M.find(x=>x.id===id);
  if(!m){if(!ucitano)return ucitavam();return home()}
- const r=revs(m),a=avg(m),k=kat(m.k),moja=r.find(x=>x.mine);
+ const r=revs(m),a=avg(m),moja=r.find(x=>x.mine);
  const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg.includes(t)).length}));
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
- <section class="prof"><h1>${esc(m.n)}</h1><span class="kat">${k.s}</span>
+ <section class="prof"><h1>${esc(m.n)}</h1>${m.ks.map(id=>`<span class="kat">${kat(id).s}</span>`).join('')}
   <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
   <ul class="facts">${m.mesto?`<li><span>Iz</span>${esc(m.mesto)}</li>`:''}<li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
  </section>
@@ -515,15 +517,17 @@ function poljaHtml(d,admin){return `
  ${admin?`<label for="pMesto">Mesto (odakle je)</label><input id="pMesto" list="mestaLista" maxlength="40" placeholder="npr. Nova Pazova" value="${esc(d.mesto||'')}">
  <datalist id="mestaLista">${MESTA.map(m=>`<option value="${m}">`).join('')}</datalist>`:''}
  <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel" value="${esc(d.telefon||'')}">
- <label for="pKat">${admin?'Kategorija':'Čime se baviš'}</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>
+ ${admin?`<label>Kategorije (može više)</label><div class="toggles" id="pKats">${KAT.map(k=>`<button type="button" aria-pressed="${(d.kategorije||[d.kategorija]).includes(k.id)}" data-k="${k.id}">${k.n}</button>`).join('')}</div>`
+  :`<label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>`}
  <label>Mesta u kojima radi</label><div class="toggles" id="pMesta">${MESTA.map(m=>`<button type="button" aria-pressed="${(d.mesta||[]).includes(m)}" data-m="${m}">${m}</button>`).join('')}</div>
  <label for="pIsk">Godine iskustva${admin?' (0 ako nije poznato)':''}</label><input id="pIsk" type="number" inputmode="numeric" min="0" max="60" value="${d.iskustvo??''}">
  <label for="pOpis">${admin?'Kratak opis':'O sebi i svom iskustvu'}</label><textarea id="pOpis" maxlength="${admin?500:300}" placeholder="npr. Električar sam 15 godina. Radim kućne instalacije, razvodne table i hitne popravke.">${esc(d.opis||'')}</textarea>`}
-function poveziPolja(d){const mesta=new Set(d.mesta||[]);
+function poveziPolja(d){const mesta=new Set(d.mesta||[]),kats=new Set((d.kategorije||[d.kategorija]).filter(Boolean));
+ sh.querySelectorAll('#pKats button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;kats.has(k)?kats.delete(k):kats.add(k);b.setAttribute('aria-pressed',kats.has(k))});
  sh.querySelectorAll('#pMesta button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;mesta.has(m)?mesta.delete(m):mesta.add(m);b.setAttribute('aria-pressed',mesta.has(m))});
  // Vraća [podaci, greška]; strogo = obavezan telefon i duži opis (javna forma)
  return (strogo,traziTel)=>{const $=id=>document.getElementById(id);
-  const ime=$('pIme').value.trim().replace(/\s+/g,' '),telefon=normTel($('pTel').value),kategorija=$('pKat').value,
+  const ime=$('pIme').value.trim().replace(/\s+/g,' '),telefon=normTel($('pTel').value),kategorije=$('pKats')?KAT.map(k=>k.id).filter(id=>kats.has(id)):[$('pKat').value].filter(Boolean),kategorija=kategorije[0]||'',
    iskustvo=$('pIsk').value===''?NaN:Number($('pIsk').value),opis=$('pOpis').value.trim();
   const g=ime.length<3?'Upiši ime i prezime.'
    :(strogo||traziTel||telefon)&&!telOk(telefon)?'Upiši ispravan broj telefona, npr. 064 123 4567.'
@@ -532,6 +536,7 @@ function poveziPolja(d){const mesta=new Set(d.mesta||[]);
    :!Number.isInteger(iskustvo)||iskustvo<0||iskustvo>60?'Upiši godine iskustva (broj od 0 do 60).'
    :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
   const x={ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis};
+  if($('pKats'))x.kategorije=kategorije;
   if($('pMesto'))x.mesto=$('pMesto').value.trim().replace(/\s+/g,' ');
   return [x,g]}}
 
@@ -597,7 +602,7 @@ function admin(nav){
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
  ${noviZaUbacivanje().length?`<div class="ac"><div class="h"><b>Pripremljeni majstori: ${noviZaUbacivanje().length}</b></div>
-  <p>${noviZaUbacivanje().map(n=>esc(n.ime)+' · '+esc(kat(n.kategorija).s)).join('<br>')}</p>
+  <p>${noviZaUbacivanje().map(n=>esc(n.ime)+' · '+esc((n.kategorije||[n.kategorija]).map(id=>kat(id).s).join(', '))).join('<br>')}</p>
   <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${noviZaUbacivanje().length})</button></div></div><div style="height:12px"></div>`:''}
  <button class="btn yellow" onclick="adm.dodaj()">+ Dodaj novog majstora</button>
  <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
@@ -609,7 +614,7 @@ function admin(nav){
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
-  <div class="m">${esc((kat(m.k)||{}).s||m.k)}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
+  <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
@@ -636,12 +641,15 @@ function izmeniForma(naslov,d,sacuvaj,o={}){
 
 // Majstori koje je Claude pripremio iz poruka (saglasni sa objavom); admin ih ubacuje jednim klikom
 const NOVI=[
- {id:'darko-suvakov',ime:'Darko Šuvakov',kategorija:'stolar',telefon:'0691608436',iskustvo:15,mesto:'Vojka',
-  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
-  opis:'Stolarija po meri: kuhinje, plakari, fiokari, cipelari, TV komode. Ugradnja zidnih i podnih obloga: bambus, PVC, akustični i 3D paneli, laminat, tarket i SPC podovi.'},
- {id:'sinisa-urosevic',ime:'Siniša Urošević',kategorija:'krecenje',telefon:'0644426726',iskustvo:20,mesto:'Nova Pazova',
-  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
-  opis:'Molerski radovi.'}
+ {id:'ljubomir-jovanovic',ime:'Ljubomir Jovanović',kategorija:'krecenje',kategorije:['krecenje','keramika','gips'],
+  telefon:'0638275831',iskustvo:30,mesto:'Stara Pazova',mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Molerski radovi, keramika i gips.'},
+ {id:'asmir-hasic',ime:'Asmir Hasić',kategorija:'teski',kategorije:['teski'],
+  telefon:'0612704010',iskustvo:20,mesto:'Stara Pazova',mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Zidarski radovi. Radi i na teritoriji opštine Inđija.'},
+ {id:'daniel-molnar',ime:'Daniel Molnar',kategorija:'krecenje',kategorije:['krecenje','gips'],
+  telefon:'0695172435',iskustvo:0,mesto:'Stara Pazova',mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Fasaderski i molerski radovi, gips i dekorativne tehnike.'}
 ];
 const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
@@ -661,7 +669,7 @@ const adm={
  obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
   pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
  izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
-  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto},
+  izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,kategorije:m.ks,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto},
    x=>updateDoc(doc(db,'majstori',id),x),{admin:true})},
  // Admin dodaje majstora direktno: odmah odobren, bez veze sa bilo kojim nalogom
  dodaj(){izmeniForma('Novi majstor',{},x=>setDoc(doc(collection(db,'majstori')),{...x,aktivan:true}),
@@ -672,7 +680,7 @@ const adm={
   if(!confirm(`Odvezati nalog${p&&p.email?' '+p.email:''} od majstora ${m?m.n:p.ime}?\nMajstor ostaje u aplikaciji, a prijava se briše.`))return;
   const b=writeBatch(db);
   if(m&&!oceneOd(m).length){
-   const x={ime:m.n,kategorija:m.k,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:m.t,aktivan:m.a};
+   const x={ime:m.n,kategorija:m.k,kategorije:m.ks,mesta:m.r,iskustvo:m.g,opis:m.o,telefon:m.t,aktivan:m.a};
    if(m.mesto)x.mesto=m.mesto;
    b.set(doc(collection(db,'majstori')),x);b.delete(doc(db,'majstori',m.id))}
   else if(m)b.update(doc(db,'majstori',m.id),{prijava:deleteField()});

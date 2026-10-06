@@ -26,7 +26,7 @@ service cloud.firestore {
         && d.keys().hasAll(['ime', 'kategorija', 'mesta', 'aktivan'])
         && d.ime is string && d.ime.size() >= 2 && d.ime.size() <= 60
         && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',
-                            'tesar', 'teski', 'klima', 'bravar', 'krov']
+                            'gips', 'teski', 'klima', 'bravar', 'krov']
         && d.mesta is list && d.mesta.size() >= 1 && d.mesta.size() <= 10
         && d.aktivan is bool
         && (!('telefon' in d) || (d.telefon is string
@@ -61,7 +61,7 @@ service cloud.firestore {
         && d.ime is string && d.ime.size() >= 3 && d.ime.size() <= 50
         && d.telefon is string && d.telefon.matches('^([+]381|0)[0-9]{8,9}$')
         && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',
-                            'tesar', 'teski', 'klima', 'bravar', 'krov']
+                            'gips', 'teski', 'klima', 'bravar', 'krov']
         && d.mesta is list && d.mesta.size() >= 1 && d.mesta.size() <= 10
         && d.mesta.toSet().hasOnly(['Stara Pazova', 'Nova Pazova', 'Novi Banovci',
              'Stari Banovci', 'Banovci-Dunav', 'Belegiš', 'Surduk', 'Golubinci',

@@ -638,7 +638,10 @@ function izmeniForma(naslov,d,sacuvaj,o={}){
 const NOVI=[
  {id:'darko-suvakov',ime:'Darko Šuvakov',kategorija:'stolar',telefon:'0691608436',iskustvo:15,mesto:'Vojka',
   mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
-  opis:'Stolarija po meri: kuhinje, plakari, fiokari, cipelari, TV komode. Ugradnja zidnih i podnih obloga: bambus, PVC, akustični i 3D paneli, laminat, tarket i SPC podovi.'}
+  opis:'Stolarija po meri: kuhinje, plakari, fiokari, cipelari, TV komode. Ugradnja zidnih i podnih obloga: bambus, PVC, akustični i 3D paneli, laminat, tarket i SPC podovi.'},
+ {id:'sinisa-urosevic',ime:'Siniša Urošević',kategorija:'krecenje',telefon:'0644426726',iskustvo:20,mesto:'Nova Pazova',
+  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Molerski radovi.'}
 ];
 const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};

@@ -596,6 +596,9 @@ function admin(nav){
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
  app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <main>
+ ${noviZaUbacivanje().length?`<div class="ac"><div class="h"><b>Pripremljeni majstori: ${noviZaUbacivanje().length}</b></div>
+  <p>${noviZaUbacivanje().map(n=>esc(n.ime)+' · '+esc(kat(n.kategorija).s)).join('<br>')}</p>
+  <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${noviZaUbacivanje().length})</button></div></div><div style="height:12px"></div>`:''}
  <button class="btn yellow" onclick="adm.dodaj()">+ Dodaj novog majstora</button>
  <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
@@ -631,6 +634,13 @@ function izmeniForma(naslov,d,sacuvaj,o={}){
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent=tekst}};
  document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}
 
+// Majstori koje je Claude pripremio iz poruka (saglasni sa objavom); admin ih ubacuje jednim klikom
+const NOVI=[
+ {id:'darko-suvakov',ime:'Darko Šuvakov',kategorija:'stolar',telefon:'0691608436',iskustvo:15,mesto:'Vojka',
+  mesta:['Stara Pazova','Nova Pazova','Novi Banovci','Stari Banovci','Banovci-Dunav','Belegiš','Surduk','Golubinci','Vojka','Krnješevci'],
+  opis:'Stolarija po meri: kuhinje, plakari, fiokari, cipelari, TV komode. Ugradnja zidnih i podnih obloga: bambus, PVC, akustični i 3D paneli, laminat, tarket i SPC podovi.'}
+];
+const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -682,6 +692,11 @@ const adm={
   if(uid)b.delete(doc(db,'majstori',mid,'ocene',uid));
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Recenzija je obrisana.')},
+ ubaciNove(){const novi=noviZaUbacivanje();if(!novi.length)return;
+  if(!confirm(`Ubaciti ${novi.length} majstora u aplikaciju?\n\n${novi.map(n=>n.ime).join('\n')}`))return;
+  const b=writeBatch(db);
+  novi.forEach(({id,...d})=>b.set(doc(db,'majstori',id),{...d,aktivan:true}));
+  pokusaj(()=>b.commit(),`Ubačeno ${novi.length} majstora.`)},
  uRedu(mid,uid){const b=writeBatch(db);
   DO.filter(d=>d.mid===mid&&d.ruid===uid).forEach(d=>b.delete(d.ref));
   pokusaj(()=>b.commit(),'Prijava je skinuta, recenzija ostaje.')}

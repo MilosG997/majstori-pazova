@@ -118,15 +118,15 @@ a.btn{text-decoration:none}
 .rev .rep{background:none;border:0;color:var(--muted);font-size:.78rem;padding:8px 0 0;text-decoration:underline;text-underline-offset:2px}
 .ac.flag{border-color:#C0392B}
 
-.partneri{margin-top:28px}
-.partneri .ph{display:flex;align-items:center;gap:10px}
-.partneri .ph::before{content:"";width:22px;height:5px;border-radius:3px;background:var(--yellow);flex:none}
-.partneri .ph h2{margin:0;flex:1}
-.partneri .sp{font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
-.partneri .pp{margin:6px 0 12px;font-size:.85rem;color:var(--muted)}
-.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.ptile{aspect-ratio:1;border-radius:14px;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-decoration:none;text-align:center;font-weight:700;font-size:.9rem;line-height:1.15;overflow:hidden}
-.ptile img{max-width:92%;max-height:80%;object-fit:contain}
+.partneri{margin-top:22px}
+.partneri .ph{display:flex;align-items:center;gap:8px}
+.partneri .ph::before{content:"";width:14px;height:4px;border-radius:2px;background:var(--yellow);flex:none}
+.partneri .ph h2{margin:0;flex:1;font-size:.92rem;color:var(--muted)}
+.partneri .sp{font-size:.66rem;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.partneri .pp{margin:3px 0 8px;font-size:.75rem;color:var(--muted)}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ptile{height:56px;border-radius:10px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;padding:6px;text-decoration:none;text-align:center;font-weight:700;font-size:.68rem;line-height:1.1;overflow:hidden}
+.ptile img{max-width:100%;max-height:100%;object-fit:contain}
 .ptile:active{transform:scale(.97)}
 .plogo{width:100%;max-width:220px;height:110px;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;margin:0 0 12px;overflow:hidden}
 .plogo img{max-width:90%;max-height:90%;object-fit:contain}
@@ -655,7 +655,7 @@ function admin(nav){
  <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="adm.partner()">+ Dodaj partnera</button>
  ${AP.map(x=>`<div class="ac ${x.a?'':'off'}"><div class="h"><b>${esc(x.ime)}${x.a?'':'<span class="badge">sakriven</span>'}</b><span>redosled ${x.red}</span></div>
   <div class="m" style="word-break:break-all">${esc(x.link||'bez linka')}</div>
-  <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:72px;font-size:.7rem;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="">`:esc(x.ime)}</div></div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:90px;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="">`:esc(x.ime)}</div></div>
   <div class="ab"><button onclick="adm.partner('${x.id}')">Izmeni</button><button onclick="adm.prikaziPartnera('${x.id}',${!x.a})">${x.a?'Sakrij':'Prikaži'}</button><button class="no" onclick="adm.obrisiPartnera('${x.id}')">Obriši</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}

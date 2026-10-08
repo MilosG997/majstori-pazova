@@ -7,6 +7,9 @@ $RECYCLE.BIN/
 .vscode/
 .idea/
 
+# QA testovi (poseban projekat, ne pripada aplikaciji)
+qa-proba/
+
 # Lokalno pokretanje (samo na ovom računaru, ne objavljuje se)
 pokreni-lokalno.bat
 

@@ -88,6 +88,22 @@ service cloud.firestore {
       allow update, delete: if jeAdmin();
     }
 
+    // Partneri (sponzori): javno se vide samo aktivni; menja ih samo administrator
+    match /partneri/{pid} {
+      allow read: if resource.data.aktivan == true || jeAdmin();
+      allow delete: if jeAdmin();
+      allow create, update: if jeAdmin()
+        && request.resource.data.keys().hasOnly(['ime', 'link', 'logo', 'boja', 'tekst', 'redosled', 'aktivan'])
+        && request.resource.data.ime is string && request.resource.data.ime.size() >= 2 && request.resource.data.ime.size() <= 40
+        && request.resource.data.link is string && request.resource.data.link.size() <= 300
+        && (request.resource.data.link == '' || request.resource.data.link.matches('^https?://.+'))
+        && request.resource.data.logo is string && request.resource.data.logo.size() <= 400000
+        && request.resource.data.boja is string && request.resource.data.boja.matches('^#[0-9A-Fa-f]{6}$')
+        && request.resource.data.tekst is string && request.resource.data.tekst.matches('^#[0-9A-Fa-f]{6}$')
+        && request.resource.data.redosled is int && request.resource.data.redosled >= 1 && request.resource.data.redosled <= 99
+        && request.resource.data.aktivan is bool;
+    }
+
     // Javno se vide samo aktivni majstori; sakrivene vidi samo administrator
     match /majstori/{mid} {
       allow read: if resource.data.aktivan == true || jeAdmin();

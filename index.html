@@ -118,6 +118,21 @@ a.btn{text-decoration:none}
 .rev .rep{background:none;border:0;color:var(--muted);font-size:.78rem;padding:8px 0 0;text-decoration:underline;text-underline-offset:2px}
 .ac.flag{border-color:#C0392B}
 
+.partneri{margin-top:28px}
+.partneri .ph{display:flex;align-items:center;gap:10px}
+.partneri .ph::before{content:"";width:22px;height:5px;border-radius:3px;background:var(--yellow);flex:none}
+.partneri .ph h2{margin:0;flex:1}
+.partneri .sp{font-size:.72rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.partneri .pp{margin:6px 0 12px;font-size:.85rem;color:var(--muted)}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ptile{aspect-ratio:1;border-radius:14px;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-decoration:none;text-align:center;font-weight:700;font-size:.9rem;line-height:1.15;overflow:hidden}
+.ptile img{max-width:100%;max-height:70%;object-fit:contain}
+.ptile:active{transform:scale(.97)}
+.plogo{width:100%;max-width:220px;height:110px;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;margin:0 0 12px;overflow:hidden}
+.plogo img{max-width:90%;max-height:90%;object-fit:contain}
+.boje{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.boje button{width:40px;height:40px;border-radius:10px;border:2px solid var(--line)}
+.boje button[aria-pressed="true"]{border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow)}
 .foot{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
 .foot p{margin:0;flex:1;font-size:.9rem}
 .foot p b{display:block;font-size:1rem}
@@ -297,13 +312,21 @@ onSnapshot(collectionGroup(db,'ocene'),s=>{
  OC=o;osvezi();
 },e=>console.error(e));
 
+// Partneri (sponzori): javno samo aktivni; admin vidi sve
+let P=[],AP=[];
+const uPartnera=d=>{const x=d.data();return{id:d.id,ime:String(x.ime||''),link:String(x.link||''),logo:String(x.logo||''),
+ boja:String(x.boja||'#F7F4EE'),tekst:String(x.tekst||'#16264A'),red:Number.isInteger(x.redosled)?x.redosled:99,a:x.aktivan===true}};
+const poRedu=(a,b)=>(a.red-b.red)||a.ime.localeCompare(b.ime,'sr');
+onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e));
+
 // ---------- Prijava ----------
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
 let AM=[],PR=[],DO=[],adminOdjava=[];
 onAuthStateChanged(auth,u=>{user=u;
- adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];
+ adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
+  adminOdjava.push(onSnapshot(collection(db,'partneri'),s=>{AP=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'prijave'),s=>{PR=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});return{...x,uid:d.id,v:x.vreme?x.vreme.toMillis():Date.now()}});osvezi()},e=>console.error(e)));
   // Dojave: majstori/{mid}/ocene/{ruid}/dojave/{ko je prijavio}
   adminOdjava.push(onSnapshot(collectionGroup(db,'dojave'),s=>{DO=s.docs.map(d=>({ref:d.ref,ruid:d.ref.parent.parent.id,mid:d.ref.parent.parent.parent.parent.id}));osvezi()},e=>console.error(e)));
@@ -418,6 +441,16 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
   ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
  </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
 
+// Polje "Naši partneri": vidi se samo kad postoji bar jedan aktivan partner
+const bezbedanLink=u=>/^https?:\/\//i.test(u)?u:'';
+function plocica(x){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" loading="lazy">`:`<span>${esc(x.ime)}</span>`;
+ const stil=`background:${esc(x.boja)};color:${esc(x.tekst)}`,l=bezbedanLink(x.link);
+ return l?`<a class="ptile" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
+  :`<div class="ptile" style="${stil}">${sadrzaj}</div>`}
+function partneriHtml(){if(!P.length)return'';
+ return `<section class="partneri" aria-label="Naši partneri"><div class="ph"><h2>Naši partneri</h2><span class="sp">Sponzor</span></div>
+ <p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.map(plocica).join('')}</div></section>`}
+
 function home(){
  const q=upit.trim().toLowerCase();
  let body;
@@ -429,6 +462,7 @@ function home(){
  }else{
   body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.ks.includes(k.id)&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
+   ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
    <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
  }
@@ -616,6 +650,13 @@ function admin(nav){
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
+ <h2 style="margin-top:28px">Partneri<span class="badge">${AP.filter(x=>x.a).length} aktivnih</span></h2>
+ <p class="sub2">Polje „Naši partneri” se na početnoj strani vidi tek kad je bar jedan partner aktivan. Sakriveni se ne prikazuju.</p>
+ <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="adm.partner()">+ Dodaj partnera</button>
+ ${AP.map(x=>`<div class="ac ${x.a?'':'off'}"><div class="h"><b>${esc(x.ime)}${x.a?'':'<span class="badge">sakriven</span>'}</b><span>redosled ${x.red}</span></div>
+  <div class="m" style="word-break:break-all">${esc(x.link||'bez linka')}</div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:72px;font-size:.7rem;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="">`:esc(x.ime)}</div></div>
+  <div class="ab"><button onclick="adm.partner('${x.id}')">Izmeni</button><button onclick="adm.prikaziPartnera('${x.id}',${!x.a})">${x.a?'Sakrij':'Prikaži'}</button><button class="no" onclick="adm.obrisiPartnera('${x.id}')">Obriši</button></div></div>`).join('')}
  <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
  ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
@@ -652,6 +693,43 @@ const NOVI=[
   opis:'Fasaderski i molerski radovi, gips i dekorativne tehnike.'}
 ];
 const noviZaUbacivanje=()=>NOVI.filter(n=>!AM.some(m=>m.id===n.id));
+// Forma za partnera: naziv, link, logo (smanjuje se u pregledaču i čuva u bazi), boje, redosled
+const BOJE=[['#F7F4EE','#16264A'],['#FFFFFF','#16264A'],['#1E7A4E','#FFFFFF'],['#2E62B5','#FFFFFF'],['#F2C230','#16264A'],['#16264A','#FFFFFF'],['#B23A2A','#FFFFFF']];
+function smanjiLogo(fajl){return new Promise((ok,ne)=>{const img=new Image(),url=URL.createObjectURL(fajl);
+ img.onload=()=>{const m=320,k=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');
+  c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  let d=c.toDataURL('image/webp',.85);if(!d.startsWith('data:image/webp'))d=c.toDataURL('image/png');ok(d)};
+ img.onerror=()=>{URL.revokeObjectURL(url);ne(new Error('slika'))};img.src=url})}
+function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?Math.max(...AP.map(p=>p.red))+1:1)};
+ let logo=x.logo||'',boja=x.boja,tekst=x.tekst;
+ const pregled=()=>{const el=document.getElementById('plogo');el.style.background=boja;el.style.color=tekst;el.innerHTML=logo?`<img src="${logo}" alt="">`:'<span style="font-weight:700">'+esc(document.getElementById('paIme').value||'Logo')+'</span>'};
+ sh.innerHTML=`<h3 id="sheetTitle">${x.id?'Izmena partnera':'Novi partner'}</h3>
+ <label for="paIme">Naziv firme</label><input id="paIme" maxlength="40" value="${esc(x.ime||'')}">
+ <label for="paLink">Link ka njihovom sajtu</label><input id="paLink" type="url" inputmode="url" maxlength="300" placeholder="https://..." value="${esc(x.link||'')}">
+ <label>Logo</label><div class="plogo" id="plogo"></div>
+ <input id="paFajl" type="file" accept="image/*" style="margin-bottom:6px">
+ ${logo?'<button class="lnk" id="paBezLoga" type="button" style="margin-bottom:12px">Ukloni logo (prikazuje se naziv)</button>':''}
+ <label>Boja pločice</label><div class="boje">${BOJE.map(([b,t],i)=>`<button type="button" data-i="${i}" aria-label="Boja ${i+1}" aria-pressed="${b===boja}" style="background:${b}"></button>`).join('')}</div>
+ <label for="paRed">Redosled (manji broj = bliže početku)</label><input id="paRed" type="number" inputmode="numeric" min="1" max="99" value="${x.red}">
+ <label class="sagl"><input type="checkbox" id="paAkt" ${x.id?(x.a?'checked':''):'checked'}><span>Prikaži na početnoj strani</span></label>
+ <div class="err" id="err"></div><button class="btn yellow" id="save">${x.id?'Sačuvaj':'Dodaj partnera'}</button>`;
+ const $=id=>document.getElementById(id),err=$('err'),save=$('save');
+ pregled();$('paIme').oninput=pregled;
+ $('paFajl').onchange=async e=>{const f=e.target.files[0];if(!f)return;err.textContent='';
+  try{logo=await smanjiLogo(f);if(logo.length>400000){logo='';err.textContent='Slika je prevelika i posle smanjivanja. Probaj drugu.'}pregled()}
+  catch(_){err.textContent='Ne mogu da pročitam ovu sliku. Probaj PNG ili JPG.'}};
+ if($('paBezLoga'))$('paBezLoga').onclick=()=>{logo='';pregled()};
+ sh.querySelectorAll('.boje button').forEach(b=>b.onclick=()=>{[boja,tekst]=BOJE[+b.dataset.i];sh.querySelectorAll('.boje button').forEach(y=>y.setAttribute('aria-pressed',y===b));pregled()});
+ save.onclick=async()=>{const ime=$('paIme').value.trim(),link=$('paLink').value.trim(),red=Number($('paRed').value);
+  const g=ime.length<2?'Upiši naziv firme.':link&&!/^https?:\/\/\S+\.\S+/i.test(link)?'Link mora da počne sa https:// (npr. https://metalflex.rs).'
+   :!Number.isInteger(red)||red<1||red>99?'Redosled je broj od 1 do 99.':'';
+  if(g){err.textContent=g;return}
+  const d={ime,link,logo,boja,tekst,redosled:red,aktivan:$('paAkt').checked};
+  save.disabled=true;save.textContent='Čuvam…';
+  try{await setDoc(x.id?doc(db,'partneri',x.id):doc(collection(db,'partneri')),d);zatvori();toast(x.id?'Partner je sačuvan.':'Partner je dodat.')}
+  catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Da li su objavljena nova pravila baze?';save.disabled=false;save.textContent=x.id?'Sačuvaj':'Dodaj partnera'}};
+ document.body.classList.add('open')}
+
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -668,6 +746,10 @@ const adm={
  vratiPrijavu(uid){pokusaj(()=>updateDoc(doc(db,'prijave',uid),{status:'na_cekanju'}),'Prijava je vraćena na čekanje.')},
  obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
   pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
+ partner(id){formaPartnera(id?AP.find(x=>x.id===id):null)},
+ prikaziPartnera(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'partneri',id),{aktivan:vidljiv}),vidljiv?'Partner se prikazuje.':'Partner je sakriven.')},
+ obrisiPartnera(id){const x=AP.find(y=>y.id===id);if(!x||!confirm(`Trajno obrisati partnera ${x.ime}?`))return;
+  pokusaj(()=>deleteDoc(doc(db,'partneri',id)),'Partner je obrisan.')},
  izmeniMajstora(id){const m=AM.find(x=>x.id===id);if(!m)return;
   izmeniForma('Izmena: '+m.n,{ime:m.n,telefon:m.t,kategorija:m.k,kategorije:m.ks,mesta:m.r,iskustvo:m.g,opis:m.o,mesto:m.mesto},
    x=>updateDoc(doc(db,'majstori',id),x),{admin:true})},

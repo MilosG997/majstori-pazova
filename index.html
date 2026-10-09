@@ -217,7 +217,7 @@ a.btn{text-decoration:none}
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
 const firebaseConfig={
@@ -652,6 +652,7 @@ function admin(nav){
   <p>${noviZaUbacivanje().map(n=>esc(n.ime)+' · '+esc((n.kategorije||[n.kategorija]).map(id=>kat(id).s).join(', '))).join('<br>')}</p>
   <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${noviZaUbacivanje().length})</button></div></div><div style="height:12px"></div>`:''}
  <button class="btn yellow" onclick="adm.dodaj()">+ Dodaj novog majstora</button>
+ <button class="btn ghost" id="kopijaBtn" style="width:100%;margin-top:10px" onclick="adm.kopija()">⬇ Preuzmi rezervnu kopiju</button>
  <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
  ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
@@ -769,6 +770,28 @@ const adm={
  vratiPrijavu(uid){pokusaj(()=>updateDoc(doc(db,'prijave',uid),{status:'na_cekanju'}),'Prijava je vraćena na čekanje.')},
  obrisiPrijavu(uid){if(!confirm('Trajno obrisati ovu prijavu?'))return;
   pokusaj(()=>deleteDoc(doc(db,'prijave',uid)),'Prijava je obrisana.')},
+ // Rezervna kopija: sve iz baze u jedan JSON fajl koji se preuzima na uređaj (ne ide nigde drugde)
+ async kopija(){const btn=document.getElementById('kopijaBtn'),tekst=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Pripremam kopiju…'}
+  const cist=v=>v&&typeof v.toDate==='function'?v.toDate().toISOString()
+   :Array.isArray(v)?v.map(cist):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,cist(x)])):v;
+  const sve=async q=>(await getDocs(q)).docs;
+  try{
+   const [maj,oce,par,pri,doj]=await Promise.all([sve(collection(db,'majstori')),sve(collectionGroup(db,'ocene')),
+    sve(collection(db,'partneri')),sve(collection(db,'prijave')),sve(collectionGroup(db,'dojave'))]);
+   const ocenePo={};oce.forEach(d=>{const mid=d.ref.parent.parent.id;(ocenePo[mid]=ocenePo[mid]||[]).push({id:d.id,...cist(d.data())})});
+   const podaci={aplikacija:'Majstori Pazova',napravljeno:new Date().toISOString(),
+    majstori:maj.map(d=>({id:d.id,...cist(d.data()),ocene:ocenePo[d.id]||[]})),
+    partneri:par.map(d=>({id:d.id,...cist(d.data())})),
+    prijave:pri.map(d=>({id:d.id,...cist(d.data())})),
+    dojave:doj.map(d=>({putanja:d.ref.path,...cist(d.data())}))};
+   const datum=new Date().toISOString().slice(0,10),
+    blob=new Blob([JSON.stringify(podaci,null,1)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=`majstori-pazova-kopija-${datum}.json`;document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),5000);
+   toast(`Kopija preuzeta: ${podaci.majstori.length} majstora, ${oce.length} ocena, ${podaci.partneri.length} partnera.`)}
+  catch(e){console.error(e);toast('Kopija nije uspela. Proveri internet vezu i probaj ponovo.')}
+  finally{if(btn){btn.disabled=false;btn.textContent=tekst}}},
  partner(id){formaPartnera(id?AP.find(x=>x.id===id):null)},
  prikaziPartnera(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'partneri',id),{aktivan:vidljiv}),vidljiv?'Partner se prikazuje.':'Partner je sakriven.')},
  obrisiPartnera(id){const x=AP.find(y=>y.id===id);if(!x||!confirm(`Trajno obrisati partnera ${x.ime}?`))return;

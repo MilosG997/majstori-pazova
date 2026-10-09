@@ -172,6 +172,8 @@ a.btn{text-decoration:none}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto}
 .open .sheetBg{display:block}
 .open .sheet{transform:none}
+.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.sheetBg{touch-action:none}
 .sheet h3{margin:0 0 4px;font-size:1.2rem;font-weight:800;font-stretch:108%}
 .sheet .sub{margin:0 0 14px;color:var(--muted);font-size:.9rem}
 .pick{display:flex;gap:6px;margin-bottom:6px}
@@ -351,7 +353,7 @@ let cekaPrijavu=null;
 function prijava(){
  if(user&&user.emailVerified)return Promise.resolve(true);
  return new Promise(res=>{if(cekaPrijavu)cekaPrijavu(false);cekaPrijavu=res;user?ekranPotvrde():ekranPrijave('prijava')})}
-function zavrsiPrijavu(){const f=cekaPrijavu;cekaPrijavu=null;document.body.classList.remove('open');osvezi();if(f)f(true)}
+function zavrsiPrijavu(){const f=cekaPrijavu;cekaPrijavu=null;skloniProzor();osvezi();if(f)f(true)}
 const GRESKE={
  'auth/invalid-email':'Email adresa nije ispravna.',
  'auth/invalid-credential':'Pogrešan email ili šifra.',
@@ -366,7 +368,11 @@ const GRESKE={
  'auth/unauthorized-domain':'Ovaj sajt još nije dozvoljen u Firebase-u (Authorized domains).',
  'auth/operation-not-allowed':'Prijava emailom još nije uključena u Firebase-u.'
 };
-const greskaPrijave=e=>GRESKE[e.code]||'Nije uspelo. Probaj ponovo.';
+// network-request-failed Firebase ponekad javi i kad je korisnik samo zatvorio prozor za prijavu;
+// o internetu pišemo samo kad uređaj stvarno nije na mreži
+const greskaPrijave=e=>e.code==='auth/network-request-failed'
+ ?(navigator.onLine===false?GRESKE[e.code]:'Prijava nije uspela. Probaj ponovo.')
+ :GRESKE[e.code]||'Prijava nije uspela. Probaj ponovo.';
 const G_IKONA='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.3a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>';
 
 function ekranPrijave(mod){
@@ -395,8 +401,13 @@ function ekranPrijave(mod){
  const err=$('err'),ok=$('aOk');
  sh.querySelectorAll('.alt .lnk').forEach(b=>b.onclick=()=>ekranPrijave(b.dataset.m));
  if($('gBtn'))$('gBtn').onclick=async()=>{
+  // Popup i na telefonu: redirect zahteva deljeno skladište sa firebaseapp.com, koje Safari i Chrome sve češće blokiraju
+  const g=$('gBtn');err.textContent='';g.disabled=true;
   try{await signInWithPopup(auth,new GoogleAuthProvider());zavrsiPrijavu()}
-  catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);err.textContent=greskaPrijave(e)}}};
+  catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);err.textContent=greskaPrijave(e)}}
+  finally{g.disabled=false}};
+ // Poruka o grešci nestaje čim korisnik počne da kuca
+ sh.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{err.textContent=''}));
  const radi=async(f)=>{const t=ok.textContent;ok.disabled=true;ok.textContent='Sačekaj…';err.textContent='';
   try{await f()}catch(e){console.error(e);err.textContent=greskaPrijave(e)}finally{ok.disabled=false;ok.textContent=t}};
  ok.onclick=()=>{
@@ -415,7 +426,7 @@ function ekranPrijave(mod){
   radi(async()=>{const c=await createUserWithEmailAndPassword(auth,mail,pass);
    await updateProfile(c.user,{displayName:ime+' '+prez});
    await sendEmailVerification(c.user);ekranPotvrde()})};
- document.body.classList.add('open');setTimeout(()=>($('aIme')||$('aMail')).focus(),50)}
+ otvoriProzor();setTimeout(()=>($('aIme')||$('aMail')).focus(),50)}
 
 function ekranPotvrde(){
  const $=id=>document.getElementById(id);
@@ -435,7 +446,7 @@ function ekranPotvrde(){
   try{await sendEmailVerification(user);toast('Link je ponovo poslat.')}
   catch(e){console.error(e);err.textContent=greskaPrijave(e)}};
  $('vOut').onclick=async()=>{zatvori();await odjava()};
- document.body.classList.add('open')}
+ otvoriProzor()}
 
 async function odjava(){await signOut(auth);toast('Odjavljen si.')}
 const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
@@ -464,7 +475,9 @@ function partneriHtml(){if(!P.length)return'';
  return `<section class="partneri" aria-label="Naši partneri"><div class="ph"><h2>Naši partneri</h2><span class="sp">Sponzor</span></div>
  <p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.map(plocica).join('')}</div></section>`}
 
-function home(){
+// Početna: zaglavlje (logo, mesto, pretraga) crta se jednom; menja se samo deo sa rezultatima,
+// da logo i ikonice ne trepću i da polje za pretragu ne gubi fokus
+function teloPocetne(){
  const q=upit.trim().toLowerCase();
  let body;
  if(!ucitano)body=`<div class="empty">Učitavam majstore…</div>`;
@@ -479,17 +492,31 @@ function home(){
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
    <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
  }
- app.innerHTML=`<header class="top">
+ return body}
+let tajmerPretrage=0;
+function home(){
+ if(app.dataset.v!=='home'){
+  app.dataset.v='home';
+  app.innerHTML=`<header class="top">
   <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
-  <div class="controls">
-   <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option ${x===mesto?'selected':''}>${x}</option>`).join('')}</select></label>
-   <label class="field">${svg('search')}<input id="q" type="search" placeholder="Traži majstora ili posao, npr. bojler" value="${esc(upit)}" aria-label="Pretraga"></label>
-  </div></header><div class="ruler"></div>
-  <div class="note">${nalog()}</div>
-  <main>${body}</main>`;
- document.getElementById('mesto').onchange=e=>{mesto=e.target.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}osvezi()};
- const qi=document.getElementById('q');qi.oninput=e=>{upit=e.target.value;const pos=qi.selectionStart;home();const n=document.getElementById('q');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}};
-}
+  <form class="controls" role="search" autocomplete="off" onsubmit="return false">
+   <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option>${x}</option>`).join('')}</select></label>
+   <label class="field">${svg('search')}<input id="pretragaMajstora" name="pretraga-majstora" type="search" role="searchbox" enterkeyhint="search"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other"
+    placeholder="Traži majstora ili posao, npr. bojler" aria-label="Pretraga"></label>
+  </form></header><div class="ruler"></div>
+  <div class="note" id="nalogRed"></div>
+  <main id="teloPocetne"></main>`;
+  const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
+  sel.onchange=()=>{mesto=sel.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}osveziPocetnu()};
+  qi.oninput=()=>{upit=qi.value;clearTimeout(tajmerPretrage);tajmerPretrage=setTimeout(osveziPocetnu,150)};
+ }
+ const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
+ if(sel.value!==mesto)sel.value=mesto;
+ if(document.activeElement!==qi&&qi.value!==upit)qi.value=upit;
+ osveziPocetnu()}
+function osveziPocetnu(){const t=document.getElementById('teloPocetne'),n=document.getElementById('nalogRed');if(!t)return;
+ n.innerHTML=nalog();t.innerHTML=teloPocetne()}
 
 const ucitavam=()=>{app.innerHTML=`<main><div class="empty">Učitavam…</div></main>`};
 
@@ -549,7 +576,7 @@ async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
   del.disabled=true;
   try{await deleteDoc(doc(db,'majstori',id,'ocene',user.uid));zatvori();toast('Ocena je obrisana.')}
   catch(e){console.error(e);err.textContent='Brisanje nije uspelo. Probaj ponovo.';del.disabled=false}};
- document.body.classList.add('open');setTimeout(()=>sh.querySelector('#pick button').focus(),50)}
+ otvoriProzor();setTimeout(()=>sh.querySelector('#pick button').focus(),50)}
 // ---------- Upis majstora ----------
 const normTel=s=>String(s).replace(/[\s\-\/().]/g,'');
 const telOk=s=>/^(\+381|0)[0-9]{8,9}$/.test(s);
@@ -606,7 +633,7 @@ async function upisSe(){
   <p class="sub">${esc(p.ime)} · ${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</p>
   <button class="btn yellow" id="ok">U redu</button>`;
   document.getElementById('ok').onclick=zatvori;
-  document.body.classList.add('open');return}
+  otvoriProzor();return}
  sh.innerHTML=`<h3 id="sheetTitle">Upiši se kao majstor</h3><p class="sub">Besplatno. Pre objave te pozovemo da proverimo podatke.</p>
  ${poljaHtml({ime:user.displayName||''})}
  <label class="sagl"><input type="checkbox" id="pSag"><span>Saglasan sam da se moje ime, broj telefona, mesta u kojima radim i opis javno objave u aplikaciji Majstori Pazova (<a href="privatnost.html" target="_blank">politika privatnosti</a>).</span></label>
@@ -623,7 +650,7 @@ async function upisSe(){
    obavestiAdmina(d);
    zatvori();toast('Prijava je poslata. Javićemo ti se pre objave.')
   }catch(e){console.error(e);err.textContent='Slanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent='Pošalji prijavu'}};
- document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}
+ otvoriProzor();setTimeout(()=>document.getElementById('pIme').focus(),50)}
 
 // ---------- Admin ----------
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
@@ -692,7 +719,7 @@ function izmeniForma(naslov,d,sacuvaj,o={}){
   const tekst=save.textContent;save.disabled=true;save.textContent='Čuvam…';
   try{await sacuvaj(x);zatvori();toast(o.uspeh||'Sačuvano.')}
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Probaj ponovo.';save.disabled=false;save.textContent=tekst}};
- document.body.classList.add('open');setTimeout(()=>document.getElementById('pIme').focus(),50)}
+ otvoriProzor();setTimeout(()=>document.getElementById('pIme').focus(),50)}
 
 // Majstori koje je Claude pripremio iz poruka (saglasni sa objavom); admin ih ubacuje jednim klikom
 const NOVI=[
@@ -752,7 +779,7 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
   save.disabled=true;save.textContent='Čuvam…';
   try{await setDoc(x.id?doc(db,'partneri',x.id):doc(collection(db,'partneri')),d);zatvori();toast(x.id?'Partner je sačuvan.':'Partner je dodat.')}
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Da li su objavljena nova pravila baze?';save.disabled=false;save.textContent=x.id?'Sačuvaj':'Dodaj partnera'}};
- document.body.classList.add('open')}
+ otvoriProzor()}
 
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
@@ -859,20 +886,33 @@ function kontakt(){
  document.getElementById('kop').onclick=async()=>{
   try{await navigator.clipboard.writeText(KONTAKT);toast('Adresa je kopirana.')}
   catch(e){const r=document.createRange();r.selectNodeContents(sh.querySelector('.mejl'));const x=getSelection();x.removeAllRanges();x.addRange(r);toast('Adresa je označena, kopiraj je sa Ctrl+C.')}};
+ otvoriProzor()}
+// Prozor (donji jezičak) zaključava skrol stranice ispod; radi i na iPhone Safariju (position:fixed na body)
+let zakljucanY=null;
+function otvoriProzor(){
+ if(zakljucanY===null){zakljucanY=window.scrollY;const b=document.body.style;
+  b.position='fixed';b.top=`-${zakljucanY}px`;b.left='0';b.right='0';b.width='100%';b.overflow='hidden'}
  document.body.classList.add('open')}
-function zatvori(){document.body.classList.remove('open');if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
+// Posle zatvaranja sadržaj prozora se uklanja: zaostalo polje za šifru navodi Chrome da pretragu
+// smatra poljem za korisničko ime (ikonica naloga u pretrazi)
+let tajmerPraznjenja=0;
+function skloniProzor(){
+ document.body.classList.remove('open');
+ clearTimeout(tajmerPraznjenja);tajmerPraznjenja=setTimeout(()=>{if(!document.body.classList.contains('open'))sh.innerHTML=''},300);
+ if(zakljucanY!==null){const y=zakljucanY,b=document.body.style;zakljucanY=null;
+  b.position=b.top=b.left=b.right=b.width=b.overflow='';window.scrollTo(0,y)}}
+function zatvori(){skloniProzor();if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
 document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 
 function prikazi(nav){const h=location.hash;let p;
+ if(h.startsWith('#/admin')||/^#\/[km]\//.test(h))app.dataset.v='';
  if(h.startsWith('#/admin'))admin(nav);
  else if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
  else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);
  else home()}
 // Osvežava ekran kad stignu novi podaci, bez skrolovanja i bez gubljenja fokusa u pretrazi
-function osvezi(){const a=document.activeElement,uQ=a&&a.id==='q',pos=uQ?a.selectionStart:0;
- prikazi(false);
- if(uQ){const n=document.getElementById('q');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}}
+function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
 Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,toast});

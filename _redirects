@@ -1,0 +1,4 @@
+# Netlify preusmeravanja
+# Stara Netlify adresa vodi na glavni domen (301 = trajno, dobro za Google)
+https://majstori-pazova.netlify.app/*  https://majstoripazova.rs/:splat  301!
+http://majstori-pazova.netlify.app/*   https://majstoripazova.rs/:splat  301!

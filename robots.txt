@@ -1,0 +1,5 @@
+# Majstori Pazova: pretraživači smeju da indeksiraju ceo sajt
+User-agent: *
+Allow: /
+
+Sitemap: https://majstoripazova.rs/sitemap.xml

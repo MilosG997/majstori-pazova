@@ -199,13 +199,6 @@ a.btn{text-decoration:none}
 .hint{font-size:.82rem;color:var(--muted);margin:-6px 0 12px}
 .err{color:#C0392B;font-size:.85rem;min-height:1.2em;margin:-4px 0 8px}
 
-.kolacici{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:536px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem}
-.kolacici p{margin:0;flex:1 1 220px;color:var(--text)}
-.kolacici a{color:inherit}
-.kolacici div{display:flex;gap:8px;margin-left:auto}
-.kolacici button{border:0;border-radius:10px;padding:9px 14px;font-weight:700}
-.kolacici .ne{background:transparent;border:1.5px solid var(--line);color:var(--text)}
-.kolacici .da{background:var(--yellow);color:var(--yellowInk)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -311,15 +304,15 @@ function kad(v){const d=(Date.now()-v)/864e5;
  const n=Math.floor(d/365);return n===1?'pre godinu dana':`pre ${n} ${n<5?'godine':'godina'}`}
 
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('show'),3200)}
-// ---------- Google Analytics: učitava se tek uz saglasnost posetioca; admin se nikad ne prati ----------
+// ---------- Google Analytics: uključen za sve posetioce; ko klikne "Isključi statistiku" se ne prati; admin se nikad ne prati ----------
 const GA_ID='G-MEN4G1S04E';
 let gaSpreman=false;
 const citajLS=k=>{try{return localStorage.getItem(k)}catch(_){return null}};
 const pisiLS=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(_){}};
 const izborAnalitike=()=>citajLS('mp_analitika');
 const adminUredjaj=()=>citajLS('mp_admin_uredjaj')==='1';
-const smeAnalitika=()=>izborAnalitike()==='da'&&!adminUredjaj()&&!jeAdmin()&&!location.hash.startsWith('#/admin');
-function ucitajAnalitiku(){if(gaSpreman||izborAnalitike()!=='da'||adminUredjaj())return;gaSpreman=true;
+const smeAnalitika=()=>izborAnalitike()!=='ne'&&!adminUredjaj()&&!jeAdmin()&&!location.hash.startsWith('#/admin');
+function ucitajAnalitiku(){if(gaSpreman||izborAnalitike()==='ne'||adminUredjaj())return;gaSpreman=true;
  window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
  gtag('js',new Date());
  gtag('config',GA_ID,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});
@@ -334,15 +327,11 @@ function pregledStrane(){const h=location.hash;let p,naslov='Početna';
 function obrisiGaKolacice(){document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
  [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(d=>{document.cookie=`${n}=; Max-Age=0; path=/; domain=${d}`});
  document.cookie=`${n}=; Max-Age=0; path=/`})}
-function trakaKolacica(){if(izborAnalitike()||adminUredjaj()||document.getElementById('kolacici'))return;
- const d=document.createElement('div');d.id='kolacici';d.className='kolacici';d.setAttribute('role','region');d.setAttribute('aria-label','Kolačići');
- d.innerHTML='<p>Koristimo Google Analytics da vidimo kako se aplikacija koristi, npr. koje kategorije ljudi otvaraju. <a href="privatnost.html#analitika">Više</a></p><div><button class="ne" type="button">Ne</button><button class="da" type="button">Prihvatam</button></div>';
- document.body.appendChild(d);
- d.querySelector('.da').onclick=()=>postaviIzbor('da');d.querySelector('.ne').onclick=()=>postaviIzbor('ne')}
-function postaviIzbor(v){pisiLS('mp_analitika',v);const d=document.getElementById('kolacici');if(d)d.remove();
- if(v==='da')ucitajAnalitiku();
- else{obrisiGaKolacice();if(gaSpreman){toast('Analitika je isključena.');setTimeout(()=>location.reload(),800)}}}
-function promeniKolacice(){pisiLS('mp_analitika',null);trakaKolacica()}
+// Link u podnožju: uključuje/isključuje statistiku za ovaj uređaj
+function promeniKolacice(){
+ if(izborAnalitike()==='ne'){pisiLS('mp_analitika',null);toast('Statistika je ponovo uključena.');ucitajAnalitiku()}
+ else{pisiLS('mp_analitika','ne');obrisiGaKolacice();toast('Statistika je isključena za ovaj uređaj.');if(gaSpreman)setTimeout(()=>location.reload(),900)}
+ osveziPocetnu()}
 // Klik na logo partnera (link se otvara normalno, ovde samo beležimo)
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.ptile');if(a)dogadjaj('klik_partner',{partner:a.dataset.ime||''})});
 
@@ -381,7 +370,7 @@ onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.d
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
 let AM=[],PR=[],DO=[],adminOdjava=[];
 onAuthStateChanged(auth,u=>{user=u;
- if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true;const k=document.getElementById('kolacici');if(k)k.remove()}
+ if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true}
  adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
@@ -534,7 +523,7 @@ function teloPocetne(){
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a> · <a href="#" onclick="promeniKolacice();return false">Kolačići</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a> · <a href="#" onclick="promeniKolacice();return false">${izborAnalitike()==='ne'?'Uključi statistiku':'Isključi statistiku'}</a></p>`;
  }
  return body}
 let tajmerPretrage=0;
@@ -966,7 +955,7 @@ addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);
 if(adminUredjaj())window['ga-disable-'+GA_ID]=true;
-trakaKolacica();ucitajAnalitiku();
+ucitajAnalitiku();
 </script>
 <script>
 // Service worker: instalacija na telefon i rad bez interneta

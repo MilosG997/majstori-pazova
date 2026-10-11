@@ -199,6 +199,13 @@ a.btn{text-decoration:none}
 .hint{font-size:.82rem;color:var(--muted);margin:-6px 0 12px}
 .err{color:#C0392B;font-size:.85rem;min-height:1.2em;margin:-4px 0 8px}
 
+.kolacici{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:536px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;z-index:15;box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem}
+.kolacici p{margin:0;flex:1 1 220px;color:var(--text)}
+.kolacici a{color:inherit}
+.kolacici div{display:flex;gap:8px;margin-left:auto}
+.kolacici button{border:0;border-radius:10px;padding:9px 14px;font-weight:700}
+.kolacici .ne{background:transparent;border:1.5px solid var(--line);color:var(--text)}
+.kolacici .da{background:var(--yellow);color:var(--yellowInk)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -304,7 +311,43 @@ function kad(v){const d=(Date.now()-v)/864e5;
  const n=Math.floor(d/365);return n===1?'pre godinu dana':`pre ${n} ${n<5?'godine':'godina'}`}
 
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('show'),3200)}
+// ---------- Google Analytics: učitava se tek uz saglasnost posetioca; admin se nikad ne prati ----------
+const GA_ID='G-MEN4G1S04E';
+let gaSpreman=false;
+const citajLS=k=>{try{return localStorage.getItem(k)}catch(_){return null}};
+const pisiLS=(k,v)=>{try{v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(_){}};
+const izborAnalitike=()=>citajLS('mp_analitika');
+const adminUredjaj=()=>citajLS('mp_admin_uredjaj')==='1';
+const smeAnalitika=()=>izborAnalitike()==='da'&&!adminUredjaj()&&!jeAdmin()&&!location.hash.startsWith('#/admin');
+function ucitajAnalitiku(){if(gaSpreman||izborAnalitike()!=='da'||adminUredjaj())return;gaSpreman=true;
+ window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};
+ gtag('js',new Date());
+ gtag('config',GA_ID,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});
+ const sc=document.createElement('script');sc.async=true;sc.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;document.head.appendChild(sc);
+ pregledStrane()}
+function dogadjaj(ime,param){if(!gaSpreman||!smeAnalitika())return;try{gtag('event',ime,param||{})}catch(_){}}
+// Stranice su #/k/..., #/m/...; Google-u ih šaljemo kao /k/... i /m/... da bi se videle odvojeno u izveštajima
+function pregledStrane(){const h=location.hash;let p,naslov='Početna';
+ if((p=h.match(/^#\/k\/(\w+)/)))naslov='Kategorija: '+((kat(p[1])||{}).n||p[1]);
+ else if((p=h.match(/^#\/m\/([\w-]+)/))){const m=M.find(x=>x.id===p[1]);naslov='Majstor: '+(m?m.n:p[1])}
+ dogadjaj('page_view',{page_title:naslov,page_location:location.origin+'/'+h.replace(/^#\/?/,'')})}
+function obrisiGaKolacice(){document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
+ [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(d=>{document.cookie=`${n}=; Max-Age=0; path=/; domain=${d}`});
+ document.cookie=`${n}=; Max-Age=0; path=/`})}
+function trakaKolacica(){if(izborAnalitike()||adminUredjaj()||document.getElementById('kolacici'))return;
+ const d=document.createElement('div');d.id='kolacici';d.className='kolacici';d.setAttribute('role','region');d.setAttribute('aria-label','Kolačići');
+ d.innerHTML='<p>Koristimo Google Analytics da vidimo kako se aplikacija koristi, npr. koje kategorije ljudi otvaraju. <a href="privatnost.html#analitika">Više</a></p><div><button class="ne" type="button">Ne</button><button class="da" type="button">Prihvatam</button></div>';
+ document.body.appendChild(d);
+ d.querySelector('.da').onclick=()=>postaviIzbor('da');d.querySelector('.ne').onclick=()=>postaviIzbor('ne')}
+function postaviIzbor(v){pisiLS('mp_analitika',v);const d=document.getElementById('kolacici');if(d)d.remove();
+ if(v==='da')ucitajAnalitiku();
+ else{obrisiGaKolacice();if(gaSpreman){toast('Analitika je isključena.');setTimeout(()=>location.reload(),800)}}}
+function promeniKolacice(){pisiLS('mp_analitika',null);trakaKolacica()}
+// Klik na logo partnera (link se otvara normalno, ovde samo beležimo)
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.ptile');if(a)dogadjaj('klik_partner',{partner:a.dataset.ime||''})});
+
 function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
+ dogadjaj('poziv_majstora',{majstor:m.n,kategorija:(kat(m.k)||{}).n||m.k,ima_broj:m.t?'da':'ne'});
  if(m.t)location.href='tel:'+m.t.replace(/[^\d+]/g,'');
  else toast(`Broj telefona za ${m.n} još nije unet.`)}
 
@@ -338,6 +381,7 @@ onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.d
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
 let AM=[],PR=[],DO=[],adminOdjava=[];
 onAuthStateChanged(auth,u=>{user=u;
+ if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true;const k=document.getElementById('kolacici');if(k)k.remove()}
  adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
@@ -469,7 +513,7 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
 const bezbedanLink=u=>/^https?:\/\//i.test(u)?u:'';
 function plocica(x){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" loading="lazy">`:`<span>${esc(x.ime)}</span>`;
  const stil=`background:${esc(x.boja)};color:${esc(x.tekst)}`,l=bezbedanLink(x.link);
- return l?`<a class="ptile" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
+ return l?`<a class="ptile" data-ime="${esc(x.ime)}" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
   :`<div class="ptile" style="${stil}">${sadrzaj}</div>`}
 function partneriHtml(){if(!P.length)return'';
  return `<section class="partneri" aria-label="Naši partneri"><div class="ph"><h2>Naši partneri</h2><span class="sp">Sponzor</span></div>
@@ -490,7 +534,7 @@ function teloPocetne(){
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a> · <a href="#" onclick="promeniKolacice();return false">Kolačići</a></p>`;
  }
  return body}
 let tajmerPretrage=0;
@@ -568,6 +612,7 @@ async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
     ocena:z,komentar:document.getElementById('kom').value.trim().slice(0,500),
     ime:imeNaloga(),
     oznake:TAGOVI.filter(t=>tg.has(t)),uid:user.uid,vreme:serverTimestamp()});
+   dogadjaj('poslata_ocena',{majstor:m.n,kategorija:(kat(m.k)||{}).n||m.k,ocena:z,izmena:moja?'da':'ne'});
    zatvori();toast(moja?'Ocena je izmenjena.':'Ocena je sačuvana. Vide je svi.')
   }catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent=tekst}};
  const del=document.getElementById('del');
@@ -647,6 +692,7 @@ async function upisSe(){
   err.textContent='';save.disabled=true;save.textContent='Šaljem…';
   try{
    await setDoc(doc(db,'prijave',user.uid),{...d,saglasnost:true,status:'na_cekanju',uid:user.uid,email:user.email,vreme:serverTimestamp()});
+   dogadjaj('upis_majstora',{kategorija:(kat(d.kategorija)||{}).n||d.kategorija});
    obavestiAdmina(d);
    zatvori();toast('Prijava je poslata. Javićemo ti se pre objave.')
   }catch(e){console.error(e);err.textContent='Slanje nije uspelo. Proveri internet vezu i probaj ponovo.';save.disabled=false;save.textContent='Pošalji prijavu'}};
@@ -915,9 +961,12 @@ function prikazi(nav){const h=location.hash;let p;
 function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,toast});
-addEventListener('hashchange',()=>{zatvori();prikazi(true)});
+Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,promeniKolacice,toast});
+addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
+ const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);
+if(adminUredjaj())window['ga-disable-'+GA_ID]=true;
+trakaKolacica();ucitajAnalitiku();
 </script>
 <script>
 // Service worker: instalacija na telefon i rad bez interneta

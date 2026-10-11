@@ -304,7 +304,7 @@ function kad(v){const d=(Date.now()-v)/864e5;
  const n=Math.floor(d/365);return n===1?'pre godinu dana':`pre ${n} ${n<5?'godine':'godina'}`}
 
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>e.classList.remove('show'),3200)}
-// ---------- Google Analytics: uključen za sve posetioce; ko klikne "Isključi statistiku" se ne prati; admin se nikad ne prati ----------
+// ---------- Google Analytics: uključen za sve posetioce; ko isključi statistiku (politika privatnosti) se ne prati; admin se nikad ne prati ----------
 const GA_ID='G-MEN4G1S04E';
 let gaSpreman=false;
 const citajLS=k=>{try{return localStorage.getItem(k)}catch(_){return null}};
@@ -327,11 +327,6 @@ function pregledStrane(){const h=location.hash;let p,naslov='Početna';
 function obrisiGaKolacice(){document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
  [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(d=>{document.cookie=`${n}=; Max-Age=0; path=/; domain=${d}`});
  document.cookie=`${n}=; Max-Age=0; path=/`})}
-// Link u podnožju: uključuje/isključuje statistiku za ovaj uređaj
-function promeniKolacice(){
- if(izborAnalitike()==='ne'){pisiLS('mp_analitika',null);toast('Statistika je ponovo uključena.');ucitajAnalitiku()}
- else{pisiLS('mp_analitika','ne');obrisiGaKolacice();toast('Statistika je isključena za ovaj uređaj.');if(gaSpreman)setTimeout(()=>location.reload(),900)}
- osveziPocetnu()}
 // Klik na logo partnera (link se otvara normalno, ovde samo beležimo)
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.ptile');if(a)dogadjaj('klik_partner',{partner:a.dataset.ime||''})});
 
@@ -523,7 +518,7 @@ function teloPocetne(){
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a> · <a href="#" onclick="promeniKolacice();return false">${izborAnalitike()==='ne'?'Uključi statistiku':'Isključi statistiku'}</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
  }
  return body}
 let tajmerPretrage=0;
@@ -950,7 +945,7 @@ function prikazi(nav){const h=location.hash;let p;
 function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,promeniKolacice,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);

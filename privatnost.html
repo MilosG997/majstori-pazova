@@ -36,6 +36,7 @@ li{margin:4px 0}
 .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
 .box b{display:block;margin-bottom:2px}
 a{color:inherit}
+.dugme{margin-top:10px;border:1.5px solid var(--line);background:transparent;color:var(--text);border-radius:10px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
@@ -78,15 +79,16 @@ Prijava je potrebna samo za ocenjivanje, prijavu komentara i upis majstora. Post
 <div class="box" id="analitika"><b>Statistika korišćenja (Google Analytics)</b>
 Preko usluge Google Analytics beležimo kako se aplikacija koristi: koje strane i kategorije se otvaraju, klikove na „Pozovi” (sa imenom i kategorijom majstora), klikove na partnere, poslate ocene i upise majstora, kao i opšte podatke o uređaju i približnoj lokaciji (grad ili država). Ne šaljemo tvoje ime, mejl ni broj telefona, a Google te ne prati u reklamne svrhe (Google signali i personalizacija reklama su isključeni).
 <ul>
-<li>Ako ne želiš da budeš deo statistike, klikni „Isključi statistiku” na dnu početne strane. Od tada se sa tog uređaja ništa ne šalje, a Google kolačići se brišu.</li>
-</ul></div>
+<li>Ako ne želiš da budeš deo statistike, klikni dugme ispod. Od tada se sa tog uređaja ništa ne šalje, a Google kolačići se brišu.</li>
+</ul>
+<button type="button" id="statistika" class="dugme">Isključi statistiku na ovom uređaju</button></div>
 
 <div class="box"><b>Ako prijaviš komentar</b>
 Čuvamo da je tvoj nalog prijavio taj komentar i kada. To vidi samo administrator. Autor komentara ne saznaje ko ga je prijavio.</div>
 
 <h2>Zašto ih čuvamo</h2>
 <ul>
-<li><b>Statistika korišćenja (Google Analytics)</b>: da bismo videli šta ljudima treba i popravljali aplikaciju. Možeš da je isključiš preko linka „Isključi statistiku”.</li>
+<li><b>Statistika korišćenja (Google Analytics)</b>: da bismo videli šta ljudima treba i popravljali aplikaciju. Možeš da je isključiš dugmetom u delu o statistici iznad.</li>
 <li><b>Objava podataka majstora</b>: na osnovu tvoje saglasnosti. Saglasnost možeš da povučeš kad god hoćeš, i tada te sklanjamo sa liste.</li>
 <li><b>Ocene i prijava nalogom</b>: da bi aplikacija radila, da jedna osoba ne bi mogla da ostavi više ocena istom majstoru i da bismo sprečili zloupotrebe.</li>
 <li><b>Prijave komentara</b>: da bismo uklonili lažne ili uvredljive recenzije.</li>
@@ -119,11 +121,21 @@ Preko usluge Google Analytics beležimo kako se aplikacija koristi: koje strane 
 
 <h2>Kolačići</h2>
 <p>Ne koristimo kolačiće za reklame. Google Analytics postavlja svoje kolačiće (nazivi počinju sa <code>_ga</code>) da bi razlikovao posete. Pregledač čuva i ono što je potrebno da aplikacija radi: da li si prijavljen i koje si mesto izabrao.</p>
-<p>Ako klikneš „Isključi statistiku”, Google kolačiće brišemo i više ih ne postavljamo na tom uređaju.</p>
+<p>Ako isključiš statistiku (dugme u delu „Statistika korišćenja”), Google kolačiće brišemo i više ih ne postavljamo na tom uređaju.</p>
 
 <h2>Izmene</h2>
 <p>Ako promenimo ovu politiku, novu verziju objavljujemo na ovoj strani sa novim datumom.</p>
 </main>
 </div>
+<script>
+// Isključivanje / uključivanje statistike (isti podatak koji čita aplikacija)
+(function(){var b=document.getElementById('statistika');if(!b)return;
+ function cit(){try{return localStorage.getItem('mp_analitika')}catch(e){return null}}
+ function natpis(){b.textContent=cit()==='ne'?'Statistika je isključena · Ponovo uključi':'Isključi statistiku na ovom uređaju'}
+ function obrisi(){document.cookie.split(';').map(function(c){return c.split('=')[0].trim()}).filter(function(n){return /^_ga/.test(n)}).forEach(function(n){
+  [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(function(d){document.cookie=n+'=; Max-Age=0; path=/; domain='+d});document.cookie=n+'=; Max-Age=0; path=/'})}
+ b.onclick=function(){try{if(cit()==='ne')localStorage.removeItem('mp_analitika');else{localStorage.setItem('mp_analitika','ne');obrisi()}}catch(e){}natpis()};
+ natpis()})();
+</script>
 </body>
 </html>

@@ -706,7 +706,7 @@ async function upisSe(){
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
 function admin(nav){
  if(jeAdmin()&&adminTab()==='korisnici')return adminKorisnici(nav);
- if(!jeAdmin()){app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
+ if(!jeAdmin()){app.dataset.v='';app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
   <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
  const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen'),odo=PR.filter(p=>p.status==='odobren');
  const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
@@ -803,8 +803,11 @@ function adminKorisnici(nav){
   document.getElementById('krOsvezi').onclick=()=>{KR=null;ucitajKorisnike()};
   if(nav)scrollTo(0,0);
  }
- if(KR===null&&!krUcitava&&!krGreska)ucitajKorisnike();
+ // Spisak se čita iz Firebase Authentication pri svakom otvaranju taba (vide se i novi korisnici)
+ if((nav||KR===null)&&!krUcitava&&!(KR===null&&krGreska&&!nav))ucitajKorisnike();
  osveziKorisnike()}
+// Povratak u aplikaciju (drugi prozor, telefon iz pozadine) na tabu Korisnici osvežava spisak
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&jeAdmin()&&adminTab()==='korisnici'&&location.hash.startsWith('#/admin'))ucitajKorisnike()});
 function osveziKorisnike(){
  const lista=document.getElementById('krLista');if(!lista)return;
  const tab=document.getElementById('adminTabovi');if(tab)tab.innerHTML=adminTabovi();

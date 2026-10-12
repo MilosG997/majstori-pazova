@@ -151,6 +151,20 @@ a.btn{text-decoration:none}
 .foot p b{display:block;font-size:1rem}
 .foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
 .adm{margin-top:14px}
+.adminTop{position:sticky;top:0;z-index:6;background:var(--head)}
+.adminTop .bar{position:static}
+.tabs{display:flex;gap:8px;padding:0 12px 12px}
+.tab{flex:1;text-align:center;padding:10px 8px;border-radius:10px;color:var(--headText);text-decoration:none;font-weight:700;font-size:.95rem;background:rgba(255,255,255,.08)}
+.tab.on{background:var(--yellow);color:var(--yellowInk)}
+.stati{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 16px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;font-size:.75rem;color:var(--muted)}
+.st b{display:block;font-size:1.45rem;color:var(--text);font-stretch:110%}
+.krtraka{display:flex;gap:8px;margin-bottom:10px}
+.krtraka input{flex:1;min-width:0;height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);padding:0 12px;font-size:.95rem}
+.krtraka select,.krtraka button{height:44px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);padding:0 10px;font-size:.85rem}
+button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.badge.crv{background:#C0392B;color:#fff}
+.badge.zel{background:var(--green);color:#fff}
 .legal{margin:20px 0 0;text-align:center;font-size:.82rem;color:var(--muted)}
 .legal a,.sheet .sub a,.sagl a{color:inherit}
 .ac{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
@@ -363,12 +377,16 @@ onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.d
 
 // ---------- Prijava ----------
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
-let AM=[],PR=[],DO=[],adminOdjava=[];
+let AM=[],PR=[],DO=[],BL=new Set(),adminOdjava=[];
+let jaBlokiran=false;
 onAuthStateChanged(auth,u=>{user=u;
  if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true}
- adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];
+ adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];BL=new Set();KR=null;krGreska='';jaBlokiran=false;
+ // Blokiran korisnik: aplikacija mu kaže unapred (baza ga ionako odbija)
+ if(u&&!jeAdmin())getDoc(doc(db,'blokirani',u.uid)).then(d=>{jaBlokiran=d.exists()}).catch(()=>{});
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
+  adminOdjava.push(onSnapshot(collection(db,'blokirani'),s=>{BL=new Set(s.docs.map(d=>d.id));osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'partneri'),s=>{AP=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'prijave'),s=>{PR=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});return{...x,uid:d.id,v:x.vreme?x.vreme.toMillis():Date.now()}});osvezi()},e=>console.error(e)));
   // Dojave: majstori/{mid}/ocene/{ruid}/dojave/{ko je prijavio}
@@ -575,6 +593,7 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
 const OPIS=['','Loše','Slabo','Solidno','Dobro','Odlično'];
 async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
  if(!(await prijava()))return;
+ if(jaBlokiran){toast('Tvoj nalog je blokiran. Ne možeš da ostavljaš ocene ni prijave.');return}
  const moja=oceneOd(m).find(x=>x.uid===user.uid);
  let z=moja?moja.r:0;const tg=new Set(moja?moja.tg:[]);
  sh.innerHTML=`<h3 id="sheetTitle">${moja?'Izmeni ocenu':'Oceni'}: ${esc(m.n)}</h3><p class="sub">Tvoja ocena pomaže komšijama da nađu dobrog majstora. Vide je svi. <a href="privatnost.html" target="_blank">Privatnost</a></p>
@@ -652,6 +671,7 @@ function obavestiAdmina(d){
 
 async function upisSe(){
  if(!(await prijava()))return;
+ if(jaBlokiran){toast('Tvoj nalog je blokiran. Ne možeš da ostavljaš ocene ni prijave.');return}
  let p=null;
  try{const s=await getDoc(doc(db,'prijave',user.uid));if(s.exists())p=s.data()}
  catch(e){console.error(e);toast('Ne mogu da proverim prijavu. Probaj ponovo.');return}
@@ -685,11 +705,12 @@ async function upisSe(){
 // ---------- Admin ----------
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
 function admin(nav){
+ if(jeAdmin()&&adminTab()==='korisnici')return adminKorisnici(nav);
  if(!jeAdmin()){app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
   <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
  const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen'),odo=PR.filter(p=>p.status==='odobren');
  const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
- const imeM=id=>(AM.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
+ const imeM=id=>(AM.find(m=>m.id===id)||M.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
  const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
  const prijavaKartica=(p,odbijena)=>`<div class="ac ${odbijena?'off':''}"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
   <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(fmtTel(p.telefon))}</div>
@@ -703,24 +724,30 @@ function admin(nav){
   ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
   ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
   <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
- app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
+ // Tab "Majstori": na odobrenju, odobreni majstori, prijave, partneri
+ app.innerHTML=`${adminZaglavlje()}
  <main>
+ <h2>Na odobrenju<span class="badge">${cek.length}</span></h2>
+ ${cek.length?cek.map(p=>prijavaKartica(p,false)).join(''):'<div class="empty">Nema novih prijava.</div>'}
+<div style="height:14px"></div>
  ${noviZaUbacivanje().length?`<div class="ac"><div class="h"><b>Pripremljeni majstori: ${noviZaUbacivanje().length}</b></div>
   <p>${noviZaUbacivanje().map(n=>esc(n.ime)+' · '+esc((n.kategorije||[n.kategorija]).map(id=>kat(id).s).join(', '))).join('<br>')}</p>
   <div class="ab"><button class="ok" onclick="adm.ubaciNove()">Ubaci majstore (${noviZaUbacivanje().length})</button></div></div><div style="height:12px"></div>`:''}
  <button class="btn yellow" onclick="adm.dodaj()">+ Dodaj novog majstora</button>
  <button class="btn ghost" id="kopijaBtn" style="width:100%;margin-top:10px" onclick="adm.kopija()">⬇ Preuzmi rezervnu kopiju</button>
  <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
- ${dojave.length?`<h2>Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
- <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>
- ${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}<div style="height:16px"></div>`:''}
- <h2>Prijave na čekanju<span class="badge">${cek.length}</span></h2>
- ${cek.length?cek.map(p=>prijavaKartica(p,false)).join(''):'<div class="empty">Nema novih prijava.</div>'}
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
+ ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
+ <p class="sub2">„Odveži nalog” briše prijavu (i email sa nje). Majstor ostaje u aplikaciji sa svim podacima, a nalog može ponovo da se prijavi.</p>
+ ${odo.map(p=>`<div class="ac"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
+  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</div><div class="m">Nalog: ${esc(p.email||'')}</div>
+  <div class="ab"><button onclick="adm.odvezi('${p.uid}')">Odveži nalog</button></div></div>`).join('')}`:''}
+ ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
+
  <h2 style="margin-top:28px">Partneri<span class="badge">${AP.filter(x=>x.a).length} aktivnih</span></h2>
  <p class="sub2">Polje „Naši partneri” se na početnoj strani vidi tek kad je bar jedan partner aktivan. Sakriveni se ne prikazuju.</p>
  <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="adm.partner()">+ Dodaj partnera</button>
@@ -728,15 +755,108 @@ function admin(nav){
   <div class="m" style="word-break:break-all">${esc(x.link||'bez linka')}</div>
   <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:90px;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="">`:esc(x.ime)}</div></div>
   <div class="ab"><button onclick="adm.partner('${x.id}')">Izmeni</button><button onclick="adm.prikaziPartnera('${x.id}',${!x.a})">${x.a?'Sakrij':'Prikaži'}</button><button class="no" onclick="adm.obrisiPartnera('${x.id}')">Obriši</button></div></div>`).join('')}
- <h2 style="margin-top:28px">Recenzije<span class="badge">${recenzije.length}</span></h2>
- ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}
- ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
- <p class="sub2">„Odveži nalog” briše prijavu (i email sa nje). Majstor ostaje u aplikaciji sa svim podacima, a nalog može ponovo da se prijavi.</p>
- ${odo.map(p=>`<div class="ac"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
-  <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</div><div class="m">Nalog: ${esc(p.email||'')}</div>
-  <div class="ab"><button onclick="adm.odvezi('${p.uid}')">Odveži nalog</button></div></div>`).join('')}`:''}
- ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
  </main>`;if(nav)scrollTo(0,0)}
+
+// ---------- Admin: tabovi i sekcija Korisnici ----------
+const adminTab=()=>location.hash.startsWith('#/admin/korisnici')?'korisnici':'majstori';
+function adminTabovi(){const t=adminTab(),c=naCekanju().length,d=prijavljene().length;
+ return `<a role="tab" href="#/admin" class="tab ${t==='majstori'?'on':''}" aria-selected="${t==='majstori'}">Majstori${c?` (${c})`:''}</a>
+ <a role="tab" href="#/admin/korisnici" class="tab ${t==='korisnici'?'on':''}" aria-selected="${t==='korisnici'}">Korisnici${d?` (${d})`:''}</a>`}
+const adminZaglavlje=()=>`<div class="adminTop"><div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
+ <nav class="tabs" role="tablist" id="adminTabovi">${adminTabovi()}</nav></div>`;
+
+// Korisnici: spisak dolazi iz Firebase Authentication preko Netlify funkcije (samo za admina)
+let KR=null,krGreska='',krUcitava=false,krPretraga='',krSort='novi',krTajmer=0;
+async function adminApi(telo){
+ const t=await user.getIdToken();
+ const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(telo)});
+ let j={};try{j=await r.json()}catch(_){}
+ if(!r.ok)throw new Error(j.greska||('Greška '+r.status));
+ return j}
+async function ucitajKorisnike(){if(krUcitava)return;krUcitava=true;krGreska='';osveziKorisnike();
+ try{KR=(await adminApi({akcija:'spisak'})).korisnici}
+ catch(e){console.error(e);krGreska=e.message||'Spisak nije učitan.'}
+ finally{krUcitava=false;osveziKorisnike()}}
+const datum=iso=>iso?new Date(iso).toLocaleDateString('sr-Latn-RS',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+// Ocene po korisniku (ID ocene je uid korisnika)
+const oceneKorisnika=uid=>Object.entries(OC).flatMap(([mid,l])=>l.filter(r=>r.uid===uid).map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
+const NEDELJA=7*864e5;
+function adminKorisnici(nav){
+ if(app.dataset.v!=='admin-k'){
+  app.dataset.v='admin-k';
+  app.innerHTML=`${adminZaglavlje()}
+  <main>
+   <div class="stati" id="krStat"></div>
+   <form class="krtraka" autocomplete="off" onsubmit="return false">
+    <input id="krTrazi" name="trazi-korisnika" type="search" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" placeholder="Traži po imenu ili emailu" aria-label="Traži korisnika">
+    <select id="krSort" aria-label="Sortiranje"><option value="novi">Najnoviji</option><option value="stari">Najstariji</option></select>
+    <button type="button" id="krOsvezi" aria-label="Osveži spisak">↻</button>
+   </form>
+   <div id="krLista"></div>
+   <div id="krDojave"></div>
+   <div id="krRecenzije"></div>
+  </main>`;
+  const q=document.getElementById('krTrazi'),so=document.getElementById('krSort');
+  q.value=krPretraga;so.value=krSort;
+  q.oninput=()=>{krPretraga=q.value;clearTimeout(krTajmer);krTajmer=setTimeout(osveziKorisnike,150)};
+  so.onchange=()=>{krSort=so.value;osveziKorisnike()};
+  document.getElementById('krOsvezi').onclick=()=>{KR=null;ucitajKorisnike()};
+  if(nav)scrollTo(0,0);
+ }
+ if(KR===null&&!krUcitava&&!krGreska)ucitajKorisnike();
+ osveziKorisnike()}
+function osveziKorisnike(){
+ const lista=document.getElementById('krLista');if(!lista)return;
+ const tab=document.getElementById('adminTabovi');if(tab)tab.innerHTML=adminTabovi();
+ const sada=Date.now(),sve=Object.values(OC).flat();
+ const obicni=(KR||[]).filter(k=>!k.admin);
+ document.getElementById('krStat').innerHTML=`
+  <div class="st"><b>${KR?obicni.length:'…'}</b>registrovanih</div>
+  <div class="st"><b>${KR?obicni.filter(k=>k.kreiran&&sada-new Date(k.kreiran)<NEDELJA).length:'…'}</b>novih ove nedelje</div>
+  <div class="st"><b>${sve.filter(r=>sada-r.v<NEDELJA).length}</b>ocena ove nedelje</div>`;
+ if(krGreska)lista.innerHTML=`<div class="empty">Spisak korisnika nije učitan: ${esc(krGreska)}</div>`;
+ else if(!KR)lista.innerHTML='<div class="empty">Učitavam korisnike…</div>';
+ else{
+  const q=krPretraga.trim().toLowerCase();
+  const red=KR.filter(k=>!q||k.ime.toLowerCase().includes(q)||k.email.toLowerCase().includes(q))
+   .sort((a,b)=>(krSort==='novi'?-1:1)*((a.kreiran||'').localeCompare(b.kreiran||'')));
+  lista.innerHTML=`<h2>Korisnici<span class="badge">${red.length}</span></h2>`+(red.length?red.map(k=>{const n=oceneKorisnika(k.uid).length;
+   return `<button type="button" class="ac ${BL.has(k.uid)?'off':''}" onclick="adm.korisnik('${k.uid}')"><div class="h"><b>${esc(k.ime||'(bez imena)')}</b><span>${n} ${ocenaRec(n)}</span></div>
+    <div class="m">${esc(k.email)}</div>
+    <div class="m"><span class="badge" style="margin-left:0">${k.nacin}</span>${k.admin?'<span class="badge zel">Admin</span>':''}${BL.has(k.uid)?'<span class="badge crv">Blokiran</span>':''}</div>
+    <div class="m">Registrovan ${datum(k.kreiran)} · poslednja prijava ${k.poslednjaPrijava?kad(new Date(k.poslednjaPrijava).getTime()):'—'}</div></button>`}).join('')
+   :'<div class="empty">Nema korisnika za ovu pretragu.</div>');
+ }
+ // Prijavljene recenzije i sve recenzije (korisnički sadržaj)
+ const imeM=id=>(AM.find(m=>m.id===id)||M.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
+ const recKartica=(r,mid,broj,ruid)=>`<div class="ac ${broj?'flag':''}"><div class="h"><b>${esc(imeM(mid))}</b><span>${r?kad(r.v):''}</span></div>
+  ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
+  ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
+  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
+ const dojave=prijavljene().map(g=>({...g,r:(OC[g.mid]||[]).find(x=>x.uid===g.ruid)}));
+ document.getElementById('krDojave').innerHTML=dojave.length?`<h2 style="margin-top:28px">Prijavljene recenzije<span class="badge">${dojave.length}</span></h2>
+  <p class="sub2">„U redu je” skida prijavu, a recenzija ostaje.</p>${dojave.map(g=>recKartica(g.r,g.mid,g.refs.length,g.ruid)).join('')}`:'';
+ const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
+ document.getElementById('krRecenzije').innerHTML=`<h2 style="margin-top:28px">Sve recenzije<span class="badge">${recenzije.length}</span></h2>
+  ${recenzije.length?recenzije.map(r=>recKartica(r,r.mid,DO.filter(d=>d.mid===r.mid&&d.ruid===r.uid).length,r.uid)).join(''):'<div class="empty">Još nema recenzija.</div>'}`;
+ // otvoren prozor sa detaljima korisnika se osvežava (npr. posle brisanja ocene)
+ if(krOtvoren&&document.body.classList.contains('open'))detaljiKorisnika(krOtvoren,true)}
+
+let krOtvoren=null;
+function detaljiKorisnika(uid,osvezavanje){const k=(KR||[]).find(x=>x.uid===uid);if(!k)return;krOtvoren=uid;
+ const o=oceneKorisnika(uid),bl=BL.has(uid),imeM=id=>(AM.find(m=>m.id===id)||M.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
+ sh.innerHTML=`<h3 id="sheetTitle">${esc(k.ime||'(bez imena)')}</h3>
+ <p class="sub">${esc(k.email)}</p>
+ <div class="m" style="margin-bottom:6px"><span class="badge" style="margin-left:0">${k.nacin}</span>${k.admin?'<span class="badge zel">Admin</span>':''}${bl?'<span class="badge crv">Blokiran</span>':''}</div>
+ <p class="sub2" style="margin:6px 0 14px">Registrovan ${datum(k.kreiran)} · poslednja prijava ${datum(k.poslednjaPrijava)} · email ${k.potvrdjen?'potvrđen':'nije potvrđen'}</p>
+ <h2 style="margin:0 0 10px">Ocene<span class="badge">${o.length}</span></h2>
+ ${o.length?o.map(r=>`<div class="ac"><div class="h"><b><a href="#/m/${r.mid}" style="color:inherit">${esc(imeM(r.mid))}</a></b><span>${kad(r.v)}</span></div>
+  <div class="m"><span style="color:var(--star)">${zv(r.r)}</span></div>${r.c?`<p>${esc(r.c)}</p>`:''}
+  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${r.mid}','${r.uid}')">Obriši ocenu</button></div></div>`).join('')
+  :'<div class="empty">Ovaj korisnik još nije ocenio nijednog majstora.</div>'}
+ ${k.admin?'<p class="sub2" style="margin-top:14px">Administratorski nalog ne može da se blokira ni obriše.</p>'
+  :`<div class="ab" style="margin-top:16px"><button onclick="adm.blokiraj('${uid}',${!bl})">${bl?'Odblokiraj':'Blokiraj'}</button><button class="no" onclick="adm.obrisiKorisnika('${uid}')">Obriši korisnika</button></div>`}`;
+ if(!osvezavanje)otvoriProzor()}
 
 function izmeniForma(naslov,d,sacuvaj,o={}){
  sh.innerHTML=`<h3 id="sheetTitle">${esc(naslov)}</h3>${poljaHtml(d,o.admin)}
@@ -849,6 +969,16 @@ const adm={
    toast(`Kopija preuzeta: ${podaci.majstori.length} majstora, ${oce.length} ocena, ${podaci.partneri.length} partnera.`)}
   catch(e){console.error(e);toast('Kopija nije uspela. Proveri internet vezu i probaj ponovo.')}
   finally{if(btn){btn.disabled=false;btn.textContent=tekst}}},
+ korisnik(uid){detaljiKorisnika(uid)},
+ blokiraj(uid,da){const k=(KR||[]).find(x=>x.uid===uid);if(!k||k.admin||uid===user.uid)return;
+  pokusaj(()=>da?setDoc(doc(db,'blokirani',uid),{vreme:serverTimestamp(),email:k.email}):deleteDoc(doc(db,'blokirani',uid)),
+   da?`${k.ime||k.email} je blokiran i ne može da ocenjuje.`:`${k.ime||k.email} je odblokiran.`)},
+ async obrisiKorisnika(uid){const k=(KR||[]).find(x=>x.uid===uid);if(!k||k.admin||uid===user.uid)return;
+  if(!confirm(`Obriši korisnika ${k.ime||k.email}?\n\nDa li ste sigurni? Ova radnja se ne može poništiti.\nNjegove ocene ostaju kao „Anonimni korisnik”.`))return;
+  try{const r=await adminApi({akcija:'obrisi',uid});
+   KR=KR.filter(x=>x.uid!==uid);krOtvoren=null;zatvori();osveziKorisnike();
+   toast(`Korisnik je obrisan. Anonimizovano ocena: ${r.anonimizovanoOcena}.`)}
+  catch(e){console.error(e);toast('Brisanje nije uspelo: '+(e.message||'greška'))}},
  partner(id){formaPartnera(id?AP.find(x=>x.id===id):null)},
  prikaziPartnera(id,vidljiv){pokusaj(()=>updateDoc(doc(db,'partneri',id),{aktivan:vidljiv}),vidljiv?'Partner se prikazuje.':'Partner je sakriven.')},
  obrisiPartnera(id){const x=AP.find(y=>y.id===id);if(!x||!confirm(`Trajno obrisati partnera ${x.ime}?`))return;
@@ -901,6 +1031,7 @@ const adm={
 async function prijaviKomentar(mid,ruid){
  if(!(await prijava()))return;
  if(ruid===user.uid)return;
+ if(jaBlokiran){toast('Tvoj nalog je blokiran. Ne možeš da ostavljaš ocene ni prijave.');return}
  if(!confirm('Prijaviti ovaj komentar administratoru kao neprimeren ili lažan?'))return;
  try{await setDoc(doc(db,'majstori',mid,'ocene',ruid,'dojave',user.uid),{uid:user.uid,vreme:serverTimestamp()});
   toast('Hvala! Komentar je prijavljen administratoru.')}
@@ -927,7 +1058,7 @@ function otvoriProzor(){
 // smatra poljem za korisničko ime (ikonica naloga u pretrazi)
 let tajmerPraznjenja=0;
 function skloniProzor(){
- document.body.classList.remove('open');
+ document.body.classList.remove('open');krOtvoren=null;
  clearTimeout(tajmerPraznjenja);tajmerPraznjenja=setTimeout(()=>{if(!document.body.classList.contains('open'))sh.innerHTML=''},300);
  if(zakljucanY!==null){const y=zakljucanY,b=document.body.style;zakljucanY=null;
   b.position=b.top=b.left=b.right=b.width=b.overflow='';window.scrollTo(0,y)}}
@@ -936,7 +1067,7 @@ document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 
 function prikazi(nav){const h=location.hash;let p;
- if(h.startsWith('#/admin')||/^#\/[km]\//.test(h))app.dataset.v='';
+ if((h.startsWith('#/admin')&&!h.startsWith('#/admin/korisnici'))||/^#\/[km]\//.test(h))app.dataset.v='';
  if(h.startsWith('#/admin'))admin(nav);
  else if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
  else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);

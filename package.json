@@ -1,0 +1,12 @@
+{
+  "name": "majstori-pazova",
+  "private": true,
+  "type": "module",
+  "description": "Majstori Pazova: sajt (statički) + Netlify funkcija za admin panel",
+  "scripts": {
+    "pripremi": "node scripts/pripremi.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

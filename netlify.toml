@@ -1,0 +1,17 @@
+# Netlify podešavanja (imaju prednost nad podešavanjima u Netlify UI)
+[build]
+  # Kopira samo fajlove sajta u dist/, da node_modules, firestore.rules i ostalo ne budu objavljeni
+  command = "npm run pripremi"
+  publish = "dist"
+
+# Lokalno (netlify dev): služi fajlove direktno iz projekta, da se izmene odmah vide
+[dev]
+  framework = "#static"
+  publish = "."
+  port = 8888
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # firebase-admin se ne pakuje u jedan fajl (ima svoje dodatne fajlove)
+  external_node_modules = ["firebase-admin"]

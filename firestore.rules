@@ -11,6 +11,11 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email_verified == true;
     }
 
+    // Blokiran nalog (admin ga blokirao) ne može da ocenjuje, prijavljuje komentare ni upisuje majstora
+    function nijeBlokiran() {
+      return !exists(/databases/$(database)/documents/blokirani/$(request.auth.uid));
+    }
+
     // Majstore dodaje i menja samo administrator
     function jeAdmin() {
       return request.auth != null
@@ -84,8 +89,19 @@ service cloud.firestore {
     // Vidi ih samo podnosilac i administrator; broj nije javan dok se ne odobri.
     match /prijave/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || jeAdmin());
-      allow create: if potvrdjen() && request.auth.uid == uid && validnaPrijava();
+      allow create: if potvrdjen() && nijeBlokiran() && request.auth.uid == uid && validnaPrijava();
       allow update, delete: if jeAdmin();
+    }
+
+    // Blokirani nalozi: upisuje samo administrator (ne može da blokira sebe);
+    // korisnik sme da pročita samo svoj zapis (da mu aplikacija kaže da je blokiran)
+    match /blokirani/{uid} {
+      allow read: if jeAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if jeAdmin() && uid != request.auth.uid
+        && request.resource.data.keys().hasOnly(['vreme', 'email'])
+        && request.resource.data.vreme == request.time
+        && request.resource.data.email is string && request.resource.data.email.size() <= 200;
+      allow delete: if jeAdmin();
     }
 
     // Partneri (sponzori): javno se vide samo aktivni; menja ih samo administrator
@@ -114,6 +130,7 @@ service cloud.firestore {
       match /ocene/{uid} {
         allow read: if true;
         allow create, update: if potvrdjen()
+          && nijeBlokiran()
           && request.auth.uid == uid
           && validnaOcena(mid);
         allow delete: if request.auth != null
@@ -123,6 +140,7 @@ service cloud.firestore {
         // Vidi ih i briše samo administrator.
         match /dojave/{prijavio} {
           allow create: if potvrdjen()
+            && nijeBlokiran()
             && request.auth.uid == prijavio
             && prijavio != uid
             && request.resource.data.keys().hasOnly(['uid', 'vreme'])

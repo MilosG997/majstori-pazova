@@ -16,6 +16,13 @@ pokreni-lokalno.bat
 # Lična podešavanja Claude-a
 .claude/settings.local.json
 
+# Ključ Firebase servisnog naloga: NIKAD na GitHub
+kljuc-firebase.json
+*firebase-adminsdk*.json
+
+# Kopija sajta za objavu (pravi je Netlify pri svakoj objavi)
+dist/
+
 # Alati (za kasnije)
 node_modules/
 .firebase/

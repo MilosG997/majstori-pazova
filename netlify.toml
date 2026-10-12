@@ -4,6 +4,12 @@
   command = "npm run pripremi"
   publish = "dist"
 
+[build.environment]
+  # "Pametna" provera je javni Firebase web ključ (AIza..., namerno vidljiv u sajtu) proglasila tajnom.
+  # Gasi se samo ta provera; tajne promenljive (FIREBASE_SERVICE_ACCOUNT) Netlify i dalje proverava.
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyBHneYMR4ycYX-TMrVJlZKivhDC720GuuA"
+
 # Lokalno (netlify dev): služi fajlove direktno iz projekta, da se izmene odmah vide
 [dev]
   framework = "#static"

@@ -25,7 +25,8 @@
 <meta name="apple-mobile-web-app-title" content="Majstori">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap"></noscript>
 <style>
 :root{
   --bg:#EEF1F4;--card:#FFFFFF;--text:#1A2233;--muted:#5B6477;--line:#D8DDE5;
@@ -220,39 +221,9 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 </head>
 <body>
 <div class="wrap" id="app"></div>
-<div class="sheetBg" id="sheetBg"></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<!-- Netlify Forms: šalje adminu mejl kad stigne nova prijava majstora.
-     Namerno bez telefona i mejla podnosioca; ceo zapis je u Firebase-u (admin stranica). -->
-<form name="nova-prijava" data-netlify="true" netlify-honeypot="bot-field" hidden>
- <input type="hidden" name="subject" value="Nova prijava majstora - Majstori Pazova">
- <input name="ime"><input name="kategorija"><input name="mesta"><input name="admin"><input name="bot-field">
-</form>
-
-<script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-
-// Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
-const firebaseConfig={
- apiKey:"AIzaSyBHneYMR4ycYX-TMrVJlZKivhDC720GuuA",
- authDomain:"majstori-pazova.firebaseapp.com",
- projectId:"majstori-pazova",
- storageBucket:"majstori-pazova.firebasestorage.app",
- messagingSenderId:"156957254098",
- appId:"1:156957254098:web:6ec9d2a15a06af84f7680b"
-};
-const ADMIN_EMAIL='milosnpcz97@gmail.com';
-const fb=initializeApp(firebaseConfig);
-const auth=getAuth(fb);
-auth.languageCode='sr'; // mejlovi za potvrdu i novu šifru na srpskom
-const db=getFirestore(fb);
-
-const app=document.getElementById('app');
-const sh=document.getElementById('sheet');
-
+<script>
+// Ikonice, mesta, kategorije i zaglavlje početne: izvršava se odmah, pre učitavanja Firebase-a,
+// pa se naslov i pretraga vide bez čekanja (modul ispod koristi iste podatke)
 const IC={
  struja:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
  voda:'<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
@@ -285,6 +256,51 @@ const KAT=[
  {id:'bravar',n:'Bravarija i limarija',s:'Bravar, limar'},
  {id:'krov',n:'Krovovi',s:'Krovopokrivač'}
 ];
+function htmlZaglavlja(){return `<header class="top">
+  <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
+  <form class="controls" role="search" autocomplete="off" onsubmit="return false">
+   <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option>${x}</option>`).join('')}</select></label>
+   <label class="field">${svg('search')}<input id="pretragaMajstora" name="pretraga-majstora" type="search" role="searchbox" enterkeyhint="search"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other"
+    placeholder="Traži majstora ili posao, npr. bojler" aria-label="Pretraga"></label>
+  </form></header><div class="ruler"></div>
+  <div class="note" id="nalogRed"></div>
+  <main id="teloPocetne"><div class="empty">Učitavam majstore…</div></main>`}
+(function(){var h=location.hash;if(!h||h==='#'||h==='#/'){var a=document.getElementById('app');a.innerHTML=htmlZaglavlja();a.dataset.v='home'}})();
+</script>
+<div class="sheetBg" id="sheetBg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Prozor aplikacije"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- Netlify Forms: šalje adminu mejl kad stigne nova prijava majstora.
+     Namerno bez telefona i mejla podnosioca; ceo zapis je u Firebase-u (admin stranica). -->
+<form name="nova-prijava" data-netlify="true" netlify-honeypot="bot-field" hidden>
+ <input type="hidden" name="subject" value="Nova prijava majstora - Majstori Pazova">
+ <input name="ime"><input name="kategorija"><input name="mesta"><input name="admin"><input name="bot-field">
+</form>
+
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+// Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
+const firebaseConfig={
+ apiKey:"AIzaSyBHneYMR4ycYX-TMrVJlZKivhDC720GuuA",
+ authDomain:"majstori-pazova.firebaseapp.com",
+ projectId:"majstori-pazova",
+ storageBucket:"majstori-pazova.firebasestorage.app",
+ messagingSenderId:"156957254098",
+ appId:"1:156957254098:web:6ec9d2a15a06af84f7680b"
+};
+const ADMIN_EMAIL='milosnpcz97@gmail.com';
+const fb=initializeApp(firebaseConfig);
+const auth=getAuth(fb);
+auth.languageCode='sr'; // mejlovi za potvrdu i novu šifru na srpskom
+const db=getFirestore(fb);
+
+const app=document.getElementById('app');
+const sh=document.getElementById('sheet');
+
 const TAGOVI=["Stigao na vreme","Cena kao dogovorena","Čisto i uredno"];
 
 let M=[];        // majstori iz baze
@@ -513,7 +529,7 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
 
 // Polje "Naši partneri": vidi se samo kad postoji bar jedan aktivan partner
 const bezbedanLink=u=>/^https?:\/\//i.test(u)?u:'';
-function plocica(x){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" loading="lazy">`:`<span>${esc(x.ime)}</span>`;
+function plocica(x){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" width="120" height="60" loading="lazy" decoding="async">`:`<span>${esc(x.ime)}</span>`;
  const stil=`background:${esc(x.boja)};color:${esc(x.tekst)}`,l=bezbedanLink(x.link);
  return l?`<a class="ptile" data-ime="${esc(x.ime)}" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
   :`<div class="ptile" style="${stil}">${sadrzaj}</div>`}
@@ -543,21 +559,14 @@ let tajmerPretrage=0;
 function home(){
  if(app.dataset.v!=='home'){
   app.dataset.v='home';
-  app.innerHTML=`<header class="top">
-  <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
-  <form class="controls" role="search" autocomplete="off" onsubmit="return false">
-   <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option>${x}</option>`).join('')}</select></label>
-   <label class="field">${svg('search')}<input id="pretragaMajstora" name="pretraga-majstora" type="search" role="searchbox" enterkeyhint="search"
-    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other"
-    placeholder="Traži majstora ili posao, npr. bojler" aria-label="Pretraga"></label>
-  </form></header><div class="ruler"></div>
-  <div class="note" id="nalogRed"></div>
-  <main id="teloPocetne"></main>`;
-  const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
+  app.innerHTML=htmlZaglavlja();
+ }
+ const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
+ // događaji se vezuju jednom po zaglavlju (zaglavlje se crta i pre učitavanja modula)
+ if(!sel.onchange){
   sel.onchange=()=>{mesto=sel.value;try{localStorage.setItem('mp_mesto',mesto)}catch(_){}osveziPocetnu()};
   qi.oninput=()=>{upit=qi.value;clearTimeout(tajmerPretrage);tajmerPretrage=setTimeout(osveziPocetnu,150)};
  }
- const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
  if(sel.value!==mesto)sel.value=mesto;
  if(document.activeElement!==qi&&qi.value!==upit)qi.value=upit;
  osveziPocetnu()}
@@ -710,8 +719,6 @@ function admin(nav){
   <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
  const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen'),odo=PR.filter(p=>p.status==='odobren');
  const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
- const imeM=id=>(AM.find(m=>m.id===id)||M.find(m=>m.id===id)||{}).n||'(obrisan majstor)';
- const recenzije=Object.entries(OC).flatMap(([mid,l])=>l.map(r=>({...r,mid}))).sort((a,b)=>b.v-a.v);
  const prijavaKartica=(p,odbijena)=>`<div class="ac ${odbijena?'off':''}"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
   <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(fmtTel(p.telefon))}</div>
   <div class="m">${esc((p.mesta||[]).join(', '))}</div><div class="m">${esc(p.email||'')}</div>
@@ -719,11 +726,6 @@ function admin(nav){
   <div class="ab">${telLink(p.telefon)}${odbijena
    ?`<button onclick="adm.vratiPrijavu('${p.uid}')">Vrati na čekanje</button><button class="no" onclick="adm.obrisiPrijavu('${p.uid}')">Obriši</button>`
    :`<button onclick="adm.izmeniPrijavu('${p.uid}')">Izmeni</button><button class="ok" onclick="adm.odobri('${p.uid}')">Odobri</button><button class="no" onclick="adm.odbij('${p.uid}')">Odbij</button>`}</div></div>`;
- const dojave=prijavljene().map(g=>({...g,r:(OC[g.mid]||[]).find(x=>x.uid===g.ruid)}));
- const recKartica=(r,mid,broj,ruid)=>`<div class="ac ${broj?'flag':''}"><div class="h"><b>${esc(imeM(mid))}</b><span>${r?kad(r.v):''}</span></div>
-  ${r?`<div class="m"><span style="color:var(--star)">${zv(r.r)}</span> · ${esc(r.a)}</div>${r.c?`<p>${esc(r.c)}</p>`:''}`:'<div class="m">(recenzija je već obrisana)</div>'}
-  ${broj?`<div class="m" style="color:#C0392B">Prijavljeno ${broj}×</div>`:''}
-  <div class="ab"><button class="no" onclick="adm.obrisiRecenziju('${mid}','${ruid}')">Obriši recenziju</button>${broj?`<button onclick="adm.uRedu('${mid}','${ruid}')">U redu je</button>`:''}</div></div>`;
  // Tab "Majstori": na odobrenju, odobreni majstori, prijave, partneri
  app.innerHTML=`${adminZaglavlje()}
  <main>
@@ -753,7 +755,7 @@ function admin(nav){
  <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="adm.partner()">+ Dodaj partnera</button>
  ${AP.map(x=>`<div class="ac ${x.a?'':'off'}"><div class="h"><b>${esc(x.ime)}${x.a?'':'<span class="badge">sakriven</span>'}</b><span>redosled ${x.red}</span></div>
   <div class="m" style="word-break:break-all">${esc(x.link||'bez linka')}</div>
-  <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:90px;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="">`:esc(x.ime)}</div></div>
+  <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:90px;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="" width="120" height="60">`:esc(x.ime)}</div></div>
   <div class="ab"><button onclick="adm.partner('${x.id}')">Izmeni</button><button onclick="adm.prikaziPartnera('${x.id}',${!x.a})">${x.a?'Sakrij':'Prikaži'}</button><button class="no" onclick="adm.obrisiPartnera('${x.id}')">Obriši</button></div></div>`).join('')}
  </main>`;if(nav)scrollTo(0,0)}
 
@@ -1056,13 +1058,14 @@ let zakljucanY=null;
 function otvoriProzor(){
  if(zakljucanY===null){zakljucanY=window.scrollY;const b=document.body.style;
   b.position='fixed';b.top=`-${zakljucanY}px`;b.left='0';b.right='0';b.width='100%';b.overflow='hidden'}
- document.body.classList.add('open')}
+ document.body.classList.add('open');
+ if(document.getElementById('sheetTitle'))sh.setAttribute('aria-labelledby','sheetTitle');else sh.removeAttribute('aria-labelledby')}
 // Posle zatvaranja sadržaj prozora se uklanja: zaostalo polje za šifru navodi Chrome da pretragu
 // smatra poljem za korisničko ime (ikonica naloga u pretrazi)
 let tajmerPraznjenja=0;
 function skloniProzor(){
  document.body.classList.remove('open');krOtvoren=null;
- clearTimeout(tajmerPraznjenja);tajmerPraznjenja=setTimeout(()=>{if(!document.body.classList.contains('open'))sh.innerHTML=''},300);
+ clearTimeout(tajmerPraznjenja);tajmerPraznjenja=setTimeout(()=>{if(!document.body.classList.contains('open')){sh.innerHTML='';sh.removeAttribute('aria-labelledby')}},300);
  if(zakljucanY!==null){const y=zakljucanY,b=document.body.style;zakljucanY=null;
   b.position=b.top=b.left=b.right=b.width=b.overflow='';window.scrollTo(0,y)}}
 function zatvori(){skloniProzor();if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
@@ -1084,7 +1087,9 @@ addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);
 if(adminUredjaj())window['ga-disable-'+GA_ID]=true;
-ucitajAnalitiku();
+// Google Analytics se učitava tek posle prikaza strane (ne usporava prvi prikaz)
+const kasnije=()=>setTimeout(ucitajAnalitiku,1500);
+document.readyState==='complete'?kasnije():addEventListener('load',kasnije,{once:true});
 </script>
 <script>
 // Service worker: instalacija na telefon i rad bez interneta

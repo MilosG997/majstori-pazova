@@ -4,3 +4,10 @@
 
 /sw.js
   Cache-Control: no-cache
+
+# Ikonice i logo: pregledač ih pamti 30 dana (pri promeni loga promeniti ime fajla ili sačekati)
+/icons/*
+  Cache-Control: public, max-age=2592000
+
+/brand/*
+  Cache-Control: public, max-age=2592000

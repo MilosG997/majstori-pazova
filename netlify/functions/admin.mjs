@@ -1,5 +1,6 @@
 // Admin funkcija (Netlify): spisak korisnika iz Firebase Authentication i brisanje korisnika.
-// Radi samo za administratorski nalog; Firebase Admin ključ je u Netlify environment variables.
+// Spisak i brisanje tuđih naloga samo za administratora; svaki prijavljeni korisnik može da obriše svoj nalog.
+// Firebase Admin ključ je u Netlify environment variables.
 import { readFileSync } from 'node:fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -22,16 +23,16 @@ function app() {
 }
 const odgovor = (status, telo) => new Response(JSON.stringify(telo), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
-// Proverava Firebase ID token iz zaglavlja; prolazi samo administrator sa potvrđenim emailom
-async function proveriAdmina(req) {
+// Proverava Firebase ID token iz zaglavlja; vraća podatke o prijavljenom korisniku ili null
+async function proveriToken(req) {
   const t = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!t) return null;
   const a = app(); // ako ključ nije podešen, ovo baca grešku "nema-kljuca" (ne krije se iza "zabranjeno")
   try {
-    const d = await getAuth(a).verifyIdToken(t);
-    return d.email === ADMIN_EMAIL && d.email_verified === true ? d : null;
+    return await getAuth(a).verifyIdToken(t);
   } catch { return null; }
 }
+const jeAdmin = d => d.email === ADMIN_EMAIL && d.email_verified === true;
 
 async function spisak() {
   const auth = getAuth(app()), korisnici = [];
@@ -95,14 +96,21 @@ async function obrisi(uid) {
 
 export default async (req) => {
   if (req.method !== 'POST') return odgovor(405, { greska: 'Samo POST.' });
-  let admin;
-  try { admin = await proveriAdmina(req); }
+  let ja;
+  try { ja = await proveriToken(req); }
   catch (e) { return odgovor(500, { greska: e.message === 'nema-kljuca' ? 'Ključ servisnog naloga nije podešen na serveru.' : 'Greška na serveru.' }); }
-  if (!admin) return odgovor(403, { greska: 'Pristup dozvoljen samo administratoru.' });
+  if (!ja) return odgovor(403, { greska: 'Moraš biti prijavljen.' });
 
   let telo = {};
   try { telo = await req.json(); } catch {}
   try {
+    // Korisnik briše svoj nalog (Google Play to zahteva); administratorski nalog se ne briše
+    if (telo.akcija === 'obrisiMe') {
+      if (ja.email === ADMIN_EMAIL) return odgovor(400, { greska: 'Administratorski nalog ne može da se obriše.' });
+      return odgovor(200, await obrisi(ja.uid));
+    }
+    if (!jeAdmin(ja)) return odgovor(403, { greska: 'Pristup dozvoljen samo administratoru.' });
+    const admin = ja;
     if (telo.akcija === 'spisak') return odgovor(200, { korisnici: await spisak() });
     if (telo.akcija === 'obrisi') {
       if (!telo.uid || telo.uid === admin.uid) return odgovor(400, { greska: 'Administratorski nalog ne može da se obriše.' });

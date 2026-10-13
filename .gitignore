@@ -16,6 +16,9 @@ pokreni-lokalno.bat
 # Lična podešavanja Claude-a
 .claude/settings.local.json
 
+# Android paket sa ključem za potpisivanje (PWABuilder): NIKAD na GitHub
+android-paket/
+
 # Ključ Firebase servisnog naloga: NIKAD na GitHub
 kljuc-firebase.json
 *firebase-adminsdk*.json

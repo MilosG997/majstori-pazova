@@ -511,11 +511,29 @@ function ekranPotvrde(){
  otvoriProzor()}
 
 async function odjava(){await signOut(auth);toast('Odjavljen si.')}
+
+// Moj nalog: odjava i brisanje naloga (Google Play zahteva da korisnik može sam da obriše nalog)
+function mojNalog(){if(!user)return;
+ const $=id=>document.getElementById(id);
+ sh.innerHTML=`<h3 id="sheetTitle">Moj nalog</h3>
+ <div class="status"><b>${esc(user.displayName||'Bez imena')}</b>${esc(user.email||'')}</div>
+ <button class="btn yellow" id="nOut">Odjavi se</button>
+ ${jeAdmin()?'':`<button class="btn del" id="nDel">Obriši moj nalog</button>
+ <p class="sub">Brisanjem se trajno uklanjaju tvoj nalog i lični podaci. Tvoje ocene ostaju vidljive kao „Anonimni korisnik”.</p>`}
+ <div class="err" id="err"></div>`;
+ $('nOut').onclick=async()=>{zatvori();await odjava()};
+ if($('nDel'))$('nDel').onclick=async()=>{
+  if(!confirm('Obriši moj nalog?\n\nDa li si siguran? Ova radnja se ne može poništiti.\nTvoje ocene ostaju kao „Anonimni korisnik”.'))return;
+  const b=$('nDel');b.disabled=true;b.textContent='Brišem nalog...';$('err').textContent='';
+  try{await adminApi({akcija:'obrisiMe'});zatvori();await signOut(auth).catch(()=>{});toast('Tvoj nalog je obrisan.')}
+  catch(e){console.error(e);b.disabled=false;b.textContent='Obriši moj nalog';
+   $('err').textContent=navigator.onLine?'Brisanje nije uspelo: '+(e.message||'greška'):'Nema internet veze. Probaj ponovo.'}};
+ otvoriProzor()}
 const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
 // Prijavljene recenzije grupisane po recenziji: [{mid,ruid,broj,refs}]
 const prijavljene=()=>{const g={};DO.forEach(d=>{const k=d.mid+'/'+d.ruid;(g[k]=g[k]||{mid:d.mid,ruid:d.ruid,refs:[]}).refs.push(d.ref)});return Object.values(g)};
 const zaAdmina=()=>naCekanju().length+prijavljene().length;
-const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}${esc(kratkoIme(user.displayName)||user.email)} · ${user.emailVerified?'':'<button class="lnk" onclick="prijava()">Potvrdi email</button> · '}<button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
+const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}<button class="lnk" onclick="mojNalog()" title="Moj nalog">${esc(kratkoIme(user.displayName)||user.email)}</button> · ${user.emailVerified?'':'<button class="lnk" onclick="prijava()">Potvrdi email</button> · '}<button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
 
 // ---------- Prikaz ----------
@@ -767,7 +785,8 @@ function adminTabovi(){const t=adminTab(),c=naCekanju().length,d=prijavljene().l
 const adminZaglavlje=()=>`<div class="adminTop"><div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <nav class="tabs" role="tablist" id="adminTabovi">${adminTabovi()}</nav></div>`;
 
-// Korisnici: spisak dolazi iz Firebase Authentication preko Netlify funkcije (samo za admina)
+// Korisnici: spisak dolazi iz Firebase Authentication preko Netlify funkcije (samo za admina);
+// ista funkcija služi i korisniku za brisanje sopstvenog naloga
 let KR=null,krGreska='',krUcitava=false,krPretraga='',krSort='novi',krTajmer=0;
 async function adminApi(telo){
  const t=await user.getIdToken();
@@ -1082,7 +1101,7 @@ function prikazi(nav){const h=location.hash;let p;
 function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
-Object.assign(window,{pozovi,oceni,prijava,odjava,upisSe,adm,prijaviKomentar,kontakt,toast});
+Object.assign(window,{pozovi,oceni,prijava,odjava,mojNalog,upisSe,adm,prijaviKomentar,kontakt,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);

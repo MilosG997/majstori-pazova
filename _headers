@@ -11,3 +11,7 @@
 
 /brand/*
   Cache-Control: public, max-age=2592000
+
+# Veza sa Android aplikacijom (Google Play): mora biti JSON
+/.well-known/assetlinks.json
+  Content-Type: application/json

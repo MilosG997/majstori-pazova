@@ -2,7 +2,7 @@
 import { rmSync, mkdirSync, cpSync, existsSync } from 'node:fs';
 
 const JAVNO = ['index.html', 'privatnost.html', 'manifest.webmanifest', 'sw.js', 'robots.txt', 'sitemap.xml',
-  '_headers', '_redirects', 'icons', 'brand'];
+  '_headers', '_redirects', 'icons', 'brand', '.well-known'];
 
 rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist');

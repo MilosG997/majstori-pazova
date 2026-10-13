@@ -1,0 +1,11 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "rs.majstoripazova.app",
+    "sha256_cert_fingerprints": [
+      "67:BB:48:C8:5E:F1:3B:84:5D:4C:13:8A:24:CE:EE:52:37:FF:F9:10:DF:81:FC:02:27:0E:62:61:42:D4:58:DF",
+      "B8:59:12:1E:4D:6B:E2:AB:5E:20:72:AD:97:0C:D4:BD:E2:83:A7:55:B3:1D:45:65:1B:41:3E:6B:BA:C5:79:3D"
+    ]
+  }
+}]

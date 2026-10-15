@@ -183,12 +183,10 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 .badge{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--line);color:var(--text);margin-left:6px;vertical-align:middle}
 .sub2{font-size:.85rem;color:var(--muted);margin:-6px 0 12px}
 
-.sheetBg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;z-index:20}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto}
+.sheetBg{position:fixed;inset:0;background:rgba(5,10,20,.55);display:none;z-index:20;touch-action:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:21;transform:translateY(105%);transition:transform .25s ease;max-height:92vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .open .sheetBg{display:block}
 .open .sheet{transform:none}
-.sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.sheetBg{touch-action:none}
 .sheet h3{margin:0 0 4px;font-size:1.2rem;font-weight:800;font-stretch:108%}
 .sheet .sub{margin:0 0 14px;color:var(--muted);font-size:.9rem}
 .pick{display:flex;gap:6px;margin-bottom:6px}
@@ -279,14 +277,19 @@ function htmlZaglavlja(){return `<header class="top">
 </form>
 
 <script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,updateProfile,reload} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+// Firebase se preuzima tek posle prvog iscrtavanja strane (zaglavlje je već prikazano), da ne odlaže prvi prikaz;
+// u skrivenoj kartici requestAnimationFrame ne radi, zato i tajmer
+await new Promise(r=>{requestAnimationFrame(()=>setTimeout(r,0));setTimeout(r,100)});
+const [{initializeApp},{getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp}]=await Promise.all([
+ import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),
+ import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]);
 
 // Firebase podešavanja nisu tajna; bazu štite pravila u firestore.rules
 const firebaseConfig={
  apiKey:"AIzaSyBHneYMR4ycYX-TMrVJlZKivhDC720GuuA",
- authDomain:"majstori-pazova.firebaseapp.com",
+ // Na našem domenu prijava ide preko majstoripazova.rs/__/auth (Netlify prosleđuje Firebase-u, vidi _redirects):
+ // pregledač ne gubi stanje prijave između dva domena
+ authDomain:location.hostname==='majstoripazova.rs'?'majstoripazova.rs':'majstori-pazova.firebaseapp.com',
  projectId:"majstori-pazova",
  storageBucket:"majstori-pazova.firebasestorage.app",
  messagingSenderId:"156957254098",
@@ -294,9 +297,18 @@ const firebaseConfig={
 };
 const ADMIN_EMAIL='milosnpcz97@gmail.com';
 const fb=initializeApp(firebaseConfig);
-const auth=getAuth(fb);
-auth.languageCode='sr'; // mejlovi za potvrdu i novu šifru na srpskom
 const db=getFirestore(fb);
+// Firebase Auth se učitava tek kad zatreba: klik na „Prijavi se”, ranije prijavljen korisnik ili admin stranica.
+// Posetilac koji samo traži majstora ga ne preuzima (brže na telefonu).
+let FA=null,auth=null,authSpreman=null;
+function ucitajAuth(){return authSpreman||(authSpreman=import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js').then(m=>{
+ FA=m;
+ auth=m.initializeAuth(fb,{persistence:[m.indexedDBLocalPersistence,m.browserLocalPersistence,m.browserSessionPersistence],popupRedirectResolver:m.browserPopupRedirectResolver});
+ auth.languageCode='sr'; // mejlovi za potvrdu i novu šifru na srpskom
+ return new Promise(res=>m.onAuthStateChanged(auth,u=>{promenaNaloga(u);res(m)}))
+}).catch(e=>{authSpreman=null;throw e}))}
+// Ugrađeni pregledači (Messenger, Fejsbuk, Instagram, Viber, TikTok...) ne podržavaju Google prijavu
+const UA=navigator.userAgent,UGRADJEN=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|Viber|musical_ly|Bytedance|TikTok|; wv\)/i.test(UA),ANDROID=/Android/i.test(UA);
 
 const app=document.getElementById('app');
 const sh=document.getElementById('sheet');
@@ -395,7 +407,8 @@ onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.d
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
 let AM=[],PR=[],DO=[],BL=new Set(),adminOdjava=[];
 let jaBlokiran=false;
-onAuthStateChanged(auth,u=>{user=u;
+function promenaNaloga(u){user=u;
+ pisiLS('mp_nalog',u?'1':null); // sledeći put se Auth učitava odmah (da prijavljen korisnik ostane prijavljen)
  if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true}
  adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];BL=new Set();KR=null;krGreska='';jaBlokiran=false;
  // Blokiran korisnik: aplikacija mu kaže unapred (baza ga ionako odbija)
@@ -408,13 +421,19 @@ onAuthStateChanged(auth,u=>{user=u;
   // Dojave: majstori/{mid}/ocene/{ruid}/dojave/{ko je prijavio}
   adminOdjava.push(onSnapshot(collectionGroup(db,'dojave'),s=>{DO=s.docs.map(d=>({ref:d.ref,ruid:d.ref.parent.parent.id,mid:d.ref.parent.parent.parent.parent.id}));osvezi()},e=>console.error(e)));
  }
- osvezi()});
+ osvezi()}
 // Prijava: Google nalog ili email i šifra. Za pisanje (ocena, upis, dojava) email mora biti potvrđen.
 // prijava() vraća Promise<boolean>: true kad je korisnik prijavljen i potvrdio email.
 let cekaPrijavu=null;
 function prijava(){
  if(user&&user.emailVerified)return Promise.resolve(true);
- return new Promise(res=>{if(cekaPrijavu)cekaPrijavu(false);cekaPrijavu=res;user?ekranPotvrde():ekranPrijave('prijava')})}
+ return new Promise(res=>{if(cekaPrijavu)cekaPrijavu(false);cekaPrijavu=res;
+  if(FA){user?ekranPotvrde():ekranPrijave('prijava');return}
+  sh.innerHTML='<h3 id="sheetTitle">Prijava</h3><p class="sub">Učitavam…</p><div class="err" id="err"></div>';otvoriProzor();
+  ucitajAuth().then(()=>{if(cekaPrijavu!==res)return; // korisnik je u međuvremenu zatvorio prozor
+   if(user&&user.emailVerified){zavrsiPrijavu();toast('Prijavljen si kao '+imeNaloga()+'.')}
+   else user?ekranPotvrde():ekranPrijave('prijava')})
+  .catch(e=>{console.error(e);if(cekaPrijavu===res)document.getElementById('err').textContent=greskaPrijave({code:'auth/network-request-failed'})})})}
 function zavrsiPrijavu(){const f=cekaPrijavu;cekaPrijavu=null;skloniProzor();osvezi();if(f)f(true)}
 const GRESKE={
  'auth/invalid-email':'Email adresa nije ispravna.',
@@ -440,7 +459,7 @@ const G_IKONA='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" 
 function ekranPrijave(mod){
  const $=id=>document.getElementById(id);
  const naslov={prijava:'Prijava',registracija:'Registracija',zaboravljena:'Zaboravljena šifra'}[mod];
- const google=mod!=='zaboravljena'?`<button class="btn google" id="gBtn">${G_IKONA}Nastavi sa Google nalogom</button><div class="ili">ili emailom</div>`:'';
+ const google=mod!=='zaboravljena'?`<div id="gZona"><button class="btn google" id="gBtn">${G_IKONA}Nastavi sa Google nalogom</button></div><div class="ili">ili emailom</div>`:'';
  const polja=mod==='registracija'
   ?`<label for="aIme">Ime</label><input id="aIme" maxlength="30" autocomplete="given-name">
     <label for="aPrez">Prezime</label><input id="aPrez" maxlength="30" autocomplete="family-name">
@@ -463,10 +482,21 @@ function ekranPrijave(mod){
  const err=$('err'),ok=$('aOk');
  sh.querySelectorAll('.alt .lnk').forEach(b=>b.onclick=()=>ekranPrijave(b.dataset.m));
  if($('gBtn'))$('gBtn').onclick=async()=>{
-  // Popup i na telefonu: redirect zahteva deljeno skladište sa firebaseapp.com, koje Safari i Chrome sve češće blokiraju
-  const g=$('gBtn');err.textContent='';g.disabled=true;
-  try{await signInWithPopup(auth,new GoogleAuthProvider());zavrsiPrijavu()}
-  catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);err.textContent=greskaPrijave(e)}}
+  // U Messengeru, Instagramu i sličnim ugrađenim pregledačima Google prijava ne radi: nudimo Chrome ili email
+  if(UGRADJEN){
+   $('gZona').innerHTML=`<div class="status"><b>Google prijava ne radi unutar Messengera/Instagrama.</b>Otvori sajt u Chrome-u ili se prijavi mejlom i šifrom.</div>
+   ${ANDROID?'<a class="btn google" href="intent://majstoripazova.rs/#Intent;scheme=https;package=com.android.chrome;end">Otvori u Chrome-u</a>'
+    :'<p class="hint">Klikni ••• gore desno → Otvori u pregledaču.</p>'}
+   <button class="btn del" id="mBtn" style="color:var(--text)">Prijavi se mejlom</button>`;
+   $('mBtn').onclick=()=>{if(mod!=='prijava')ekranPrijave('prijava');else $('aMail').focus()};
+   return}
+  // Prvo iskačući prozor; ako ga pregledač blokira, prijava preusmeravanjem (radi jer je authDomain naš domen)
+  const g=$('gBtn'),p=new FA.GoogleAuthProvider();err.textContent='';g.disabled=true;
+  try{await FA.signInWithPopup(auth,p);zavrsiPrijavu()}
+  catch(e){
+   if(e.code==='auth/popup-blocked'){try{sessionStorage.setItem('mp_google','1')}catch(_){}
+    try{await FA.signInWithRedirect(auth,p);return}catch(e2){e=e2}}
+   if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);err.textContent=greskaPrijave(e)}}
   finally{g.disabled=false}};
  // Poruka o grešci nestaje čim korisnik počne da kuca
  sh.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{err.textContent=''}));
@@ -475,19 +505,19 @@ function ekranPrijave(mod){
  ok.onclick=()=>{
   const mail=$('aMail').value.trim();
   if(!/^\S+@\S+\.\S+$/.test(mail)){err.textContent='Upiši ispravnu email adresu.';return}
-  if(mod==='zaboravljena')return radi(async()=>{await sendPasswordResetEmail(auth,mail);
+  if(mod==='zaboravljena')return radi(async()=>{await FA.sendPasswordResetEmail(auth,mail);
    ekranPrijave('prijava');toast('Ako nalog postoji, poslali smo link za novu šifru. Pogledaj i Spam.')});
   const pass=$('aPass').value;
   if(mod==='prijava'){
    if(!pass){err.textContent='Upiši šifru.';return}
-   return radi(async()=>{const c=await signInWithEmailAndPassword(auth,mail,pass);c.user.emailVerified?zavrsiPrijavu():ekranPotvrde()})}
+   return radi(async()=>{const c=await FA.signInWithEmailAndPassword(auth,mail,pass);c.user.emailVerified?zavrsiPrijavu():ekranPotvrde()})}
   const ime=$('aIme').value.trim().replace(/\s+/g,' '),prez=$('aPrez').value.trim().replace(/\s+/g,' ');
   if(ime.length<2){err.textContent='Upiši ime.';return}
   if(prez.length<2){err.textContent='Upiši prezime.';return}
   if(pass.length<8){err.textContent='Šifra mora imati najmanje 8 znakova.';return}
-  radi(async()=>{const c=await createUserWithEmailAndPassword(auth,mail,pass);
-   await updateProfile(c.user,{displayName:ime+' '+prez});
-   await sendEmailVerification(c.user);ekranPotvrde()})};
+  radi(async()=>{const c=await FA.createUserWithEmailAndPassword(auth,mail,pass);
+   await FA.updateProfile(c.user,{displayName:ime+' '+prez});
+   await FA.sendEmailVerification(c.user);ekranPotvrde()})};
  otvoriProzor();setTimeout(()=>($('aIme')||$('aMail')).focus(),50)}
 
 function ekranPotvrde(){
@@ -500,17 +530,17 @@ function ekranPotvrde(){
  <div class="alt"><button class="lnk" id="vOut">Odjavi se</button></div>`;
  const err=$('err');
  $('vOk').onclick=async()=>{
-  try{await reload(user);
+  try{await FA.reload(user);
    if(user.emailVerified){await user.getIdToken(true);toast('Email je potvrđen.');zavrsiPrijavu()}
    else err.textContent='Email još nije potvrđen. Klikni na link u mejlu, pa probaj ponovo.'}
   catch(e){console.error(e);err.textContent=greskaPrijave(e)}};
  $('vRe').onclick=async()=>{
-  try{await sendEmailVerification(user);toast('Link je ponovo poslat.')}
+  try{await FA.sendEmailVerification(user);toast('Link je ponovo poslat.')}
   catch(e){console.error(e);err.textContent=greskaPrijave(e)}};
  $('vOut').onclick=async()=>{zatvori();await odjava()};
  otvoriProzor()}
 
-async function odjava(){await signOut(auth);toast('Odjavljen si.')}
+async function odjava(){await FA.signOut(auth);toast('Odjavljen si.')}
 
 // Moj nalog: odjava i brisanje naloga (Google Play zahteva da korisnik može sam da obriše nalog)
 function mojNalog(){if(!user)return;
@@ -525,7 +555,7 @@ function mojNalog(){if(!user)return;
  if($('nDel'))$('nDel').onclick=async()=>{
   if(!confirm('Obriši moj nalog?\n\nDa li si siguran? Ova radnja se ne može poništiti.\nTvoje ocene ostaju kao „Anonimni korisnik”.'))return;
   const b=$('nDel');b.disabled=true;b.textContent='Brišem nalog...';$('err').textContent='';
-  try{await adminApi({akcija:'obrisiMe'});zatvori();await signOut(auth).catch(()=>{});toast('Tvoj nalog je obrisan.')}
+  try{await adminApi({akcija:'obrisiMe'});zatvori();await FA.signOut(auth).catch(()=>{});toast('Tvoj nalog je obrisan.')}
   catch(e){console.error(e);b.disabled=false;b.textContent='Obriši moj nalog';
    $('err').textContent=navigator.onLine?'Brisanje nije uspelo: '+(e.message||'greška'):'Nema internet veze. Probaj ponovo.'}};
  otvoriProzor()}
@@ -1103,8 +1133,14 @@ function osvezi(){prikazi(false)}
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
 Object.assign(window,{pozovi,oceni,prijava,odjava,mojNalog,upisSe,adm,prijaviKomentar,kontakt,toast});
 addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
+ if(location.hash.startsWith('#/admin'))ucitajAuth().catch(e=>console.error(e));
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);
+// Auth odmah samo za ranije prijavljenog korisnika, admin stranicu i povratak sa Google prijave (preusmeravanje)
+let saGoogla=false;try{saGoogla=sessionStorage.getItem('mp_google')==='1';sessionStorage.removeItem('mp_google')}catch(_){}
+if(saGoogla)ucitajAuth().then(m=>m.getRedirectResult(auth)).then(r=>{if(r)toast('Prijavljen si kao '+imeNaloga()+'.')})
+ .catch(e=>{console.error(e);toast(greskaPrijave(e))});
+else if(citajLS('mp_nalog')==='1'||location.hash.startsWith('#/admin'))ucitajAuth().catch(e=>console.error(e));
 if(adminUredjaj())window['ga-disable-'+GA_ID]=true;
 // Google Analytics se učitava tek posle prikaza strane (ne usporava prvi prikaz)
 const kasnije=()=>setTimeout(ucitajAnalitiku,1500);

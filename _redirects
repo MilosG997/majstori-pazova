@@ -2,3 +2,7 @@
 # Stara Netlify adresa vodi na glavni domen (301 = trajno, dobro za Google)
 https://majstori-pazova.netlify.app/*  https://majstoripazova.rs/:splat  301!
 http://majstori-pazova.netlify.app/*   https://majstoripazova.rs/:splat  301!
+
+# Google prijava preko našeg domena: majstoripazova.rs/__/auth/... prosleđuje se Firebase-u (200 = adresa ostaje naša)
+/__/auth/*      https://majstori-pazova.firebaseapp.com/__/auth/:splat      200
+/__/firebase/*  https://majstori-pazova.firebaseapp.com/__/firebase/:splat  200

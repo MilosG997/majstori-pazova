@@ -167,6 +167,7 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 .badge.crv{background:#C0392B;color:#fff}
 .badge.zel{background:var(--green);color:#fff}
 .legal{margin:20px 0 0;text-align:center;font-size:.82rem;color:var(--muted)}
+.legal.mg{margin-top:10px}.legal.mg svg{width:20px;height:20px;vertical-align:-5px;margin-right:6px}.legal.mg a{font-weight:700;color:var(--text)}
 .legal a,.sheet .sub a,.sagl a{color:inherit}
 .ac{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
 .ac.off{opacity:.65}
@@ -600,7 +601,8 @@ function teloPocetne(){
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>`;
+   <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>
+   <p class="legal mg"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3fd0"/><stop offset="1" stop-color="#59c3ff"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#mgG)"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="16" fill="#fff">MG</text></svg>Napravio <a href="https://mechanicallygifted.rs" target="_blank" rel="noopener">Mechanically Gifted</a></p>`;
  }
  return body}
 let tajmerPretrage=0;

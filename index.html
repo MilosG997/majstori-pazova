@@ -370,8 +370,10 @@ function pregledStrane(){const h=location.hash;let p,naslov='Početna';
 function obrisiGaKolacice(){document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
  [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(d=>{document.cookie=`${n}=; Max-Age=0; path=/; domain=${d}`});
  document.cookie=`${n}=; Max-Age=0; path=/`})}
-// Klik na logo partnera (link se otvara normalno, ovde samo beležimo)
-document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.ptile');if(a)dogadjaj('klik_partner',{partner:a.dataset.ime||''})});
+// Klik na logo partnera i na potpis Mechanically Gifted (link se otvara normalno, ovde samo beležimo)
+document.addEventListener('click',e=>{if(!e.target.closest)return;
+ const a=e.target.closest('a.ptile');if(a)dogadjaj('klik_partner',{partner:a.dataset.ime||''});
+ if(e.target.closest('.legal.mg a'))dogadjaj('klik_mg')});
 
 function pozovi(id){const m=M.find(x=>x.id===id);if(!m)return;
  dogadjaj('poziv_majstora',{majstor:m.n,kategorija:(kat(m.k)||{}).n||m.k,ima_broj:m.t?'da':'ne'});

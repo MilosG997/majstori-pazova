@@ -580,13 +580,17 @@ function item(m,i){const a=avg(m),n=oceneOd(m).length;
 
 // Polje "Naši partneri": vidi se samo kad postoji bar jedan aktivan partner
 const bezbedanLink=u=>/^https?:\/\//i.test(u)?u:'';
-function plocica(x){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" width="120" height="60" loading="lazy" decoding="async">`:`<span>${esc(x.ime)}</span>`;
- const stil=`background:${esc(x.boja)};color:${esc(x.tekst)}`,l=bezbedanLink(x.link);
+// mesto: pozicija iz admina (1 2 3 4 u prvom redu, 5 6 7 8 u drugom...); preskočena pozicija ostaje prazna
+function plocica(x,mesto){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="${esc(x.ime)}" width="120" height="60" loading="lazy" decoding="async">`:`<span>${esc(x.ime)}</span>`;
+ const stil=`background:${esc(x.boja)};color:${esc(x.tekst)}`+(mesto?`;grid-row:${Math.ceil(mesto/4)};grid-column:${(mesto-1)%4+1}`:''),l=bezbedanLink(x.link);
  return l?`<a class="ptile" data-ime="${esc(x.ime)}" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
   :`<div class="ptile" style="${stil}">${sadrzaj}</div>`}
 function partneriHtml(){if(!P.length)return'';
  return `<section class="partneri" aria-label="Naši partneri"><div class="ph"><h2>Naši partneri</h2><span class="sp">Sponzor</span></div>
- <p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.map(plocica).join('')}</div></section>`}
+ <p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${pozicijePartnera()}</div></section>`}
+// Partner sa pozicijom 1–48 stoji tačno na njoj; bez pozicije ili sa zauzetom pozicijom ide na prvo slobodno mesto
+function pozicijePartnera(){const zauzeto=new Set();
+ return P.map(x=>{const p=x.red>=1&&x.red<=48&&!zauzeto.has(x.red)?x.red:0;if(p)zauzeto.add(p);return plocica(x,p)}).join('')}
 
 // Početna: zaglavlje (logo, mesto, pretraga) crta se jednom; menja se samo deo sa rezultatima,
 // da logo i ikonice ne trepću i da polje za pretragu ne gubi fokus

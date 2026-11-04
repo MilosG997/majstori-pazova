@@ -1200,7 +1200,10 @@ function kontakt(){
  otvoriProzor()}
 // Prozor (donji jezičak) zaključava skrol stranice ispod; radi i na iPhone Safariju (position:fixed na body)
 let zakljucanY=null;
+// Otvoren prozor dobija svoj korak u istoriji: dugme Nazad na telefonu ga zatvara umesto da izađe iz aplikacije
+let vracam=false;
 function otvoriProzor(){
+ if(!document.body.classList.contains('open'))try{history.pushState({prozor:1},'')}catch(_){}
  if(zakljucanY===null){zakljucanY=window.scrollY;const b=document.body.style;
   b.position='fixed';b.top=`-${zakljucanY}px`;b.left='0';b.right='0';b.width='100%';b.overflow='hidden'}
  document.body.classList.add('open');
@@ -1208,14 +1211,20 @@ function otvoriProzor(){
 // Posle zatvaranja sadržaj prozora se uklanja: zaostalo polje za šifru navodi Chrome da pretragu
 // smatra poljem za korisničko ime (ikonica naloga u pretrazi)
 let tajmerPraznjenja=0;
-function skloniProzor(){
+function skloniProzor(izIstorije){
+ if(!izIstorije&&document.body.classList.contains('open')&&history.state&&history.state.prozor){vracam=true;history.back()}
  document.body.classList.remove('open');krOtvoren=null;
  clearTimeout(tajmerPraznjenja);tajmerPraznjenja=setTimeout(()=>{if(!document.body.classList.contains('open')){sh.innerHTML='';sh.removeAttribute('aria-labelledby')}},300);
  if(zakljucanY!==null){const y=zakljucanY,b=document.body.style;zakljucanY=null;
   b.position=b.top=b.left=b.right=b.width=b.overflow='';window.scrollTo(0,y)}}
-function zatvori(){skloniProzor();if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
-document.getElementById('sheetBg').onclick=zatvori;
+function zatvori(izIstorije){skloniProzor(izIstorije===true);if(cekaPrijavu){const f=cekaPrijavu;cekaPrijavu=null;f(false)}}
+document.getElementById('sheetBg').onclick=()=>zatvori();
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
+addEventListener('popstate',e=>{
+ if(vracam){vracam=false;return}
+ if(document.body.classList.contains('open'))zatvori(true);
+ // Zaostali korak od prozora (prozor zatvoren prelaskom na drugu stranu) se preskače
+ else if(e.state&&e.state.prozor)history.back()});
 
 function prikazi(nav){const h=location.hash;let p;
  if(!h.startsWith('#/partnerstvo'))PSposlato=null;
@@ -1230,7 +1239,7 @@ function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne
 Object.assign(window,{pozovi,oceni,prijava,odjava,mojNalog,upisSe,adm,prijaviKomentar,kontakt,toast});
-addEventListener('hashchange',()=>{zatvori();prikazi(true);pregledStrane();
+addEventListener('hashchange',()=>{zatvori(true);prikazi(true);pregledStrane();
  if(location.hash.startsWith('#/admin'))ucitajAuth().catch(e=>console.error(e));
  const p=location.hash.match(/^#\/k\/(\w+)/);if(p&&kat(p[1]))dogadjaj('otvorena_kategorija',{kategorija:kat(p[1]).n})});
 prikazi(true);

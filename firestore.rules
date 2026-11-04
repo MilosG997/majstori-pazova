@@ -67,7 +67,8 @@ service cloud.firestore {
       let d = request.resource.data;
       let polja = ['ime', 'telefon', 'kategorija', 'mesta', 'iskustvo', 'opis',
                    'saglasnost', 'status', 'uid', 'email', 'vreme'];
-      return d.keys().hasOnly(polja) && d.keys().hasAll(polja)
+      return d.keys().hasOnly(polja.concat(['mesto'])) && d.keys().hasAll(polja)
+        && (!('mesto' in d) || (d.mesto is string && d.mesto.size() <= 40))
         && d.ime is string && d.ime.size() >= 3 && d.ime.size() <= 50
         && d.telefon is string && d.telefon.matches('^([+]381|0)[0-9]{8,9}$')
         && d.kategorija in ['struja', 'voda', 'krecenje', 'keramika', 'stolar',

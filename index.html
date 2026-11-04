@@ -767,11 +767,11 @@ const STATUS={
  odobren:['Prijava je odobrena','Nalaziš se na listi majstora.'],
  odbijen:['Prijava nije odobrena','Za pitanja piši na majstoripazova@gmail.com.']
 };
-// Polja majstora: ista forma za upis i za admin panel; admin ima i mesto odakle je majstor
+// Polja majstora: ista forma za upis i za admin panel
 function poljaHtml(d,admin){return `
  <label for="pIme">Ime i prezime</label><input id="pIme" maxlength="50" autocomplete="name" value="${esc(d.ime||'')}">
- ${admin?`<label for="pMesto">Mesto (odakle je)</label><input id="pMesto" list="mestaLista" maxlength="40" placeholder="npr. Nova Pazova" value="${esc(d.mesto||'')}">
- <datalist id="mestaLista">${MESTA.map(m=>`<option value="${m}">`).join('')}</datalist>`:''}
+ <label for="pMesto">${admin?'Mesto (odakle je)':'Odakle si (mesto)'}</label><input id="pMesto" list="mestaLista" maxlength="40" placeholder="npr. Nova Pazova" value="${esc(d.mesto||'')}">
+ <datalist id="mestaLista">${MESTA.map(m=>`<option value="${m}">`).join('')}</datalist>
  <label for="pTel">Telefon</label><input id="pTel" type="tel" inputmode="tel" maxlength="20" placeholder="npr. 064 123 4567" autocomplete="tel" value="${esc(d.telefon||'')}">
  ${admin?`<label>Kategorije (može više)</label><div class="toggles" id="pKats">${KAT.map(k=>`<button type="button" aria-pressed="${(d.kategorije||[d.kategorija]).includes(k.id)}" data-k="${k.id}">${k.n}</button>`).join('')}</div>`
   :`<label for="pKat">Čime se baviš</label><select id="pKat"><option value="">Izaberi…</option>${KAT.map(k=>`<option value="${k.id}" ${k.id===d.kategorija?'selected':''}>${k.n} (${k.s.toLowerCase()})</option>`).join('')}</select>`}
@@ -793,7 +793,9 @@ function poveziPolja(d){const mesta=new Set(d.mesta||[]),kats=new Set((d.kategor
    :strogo&&opis.length<20?'Napiši bar jednu rečenicu o sebi i svom iskustvu.':'';
   const x={ime,telefon,kategorija,mesta:MESTA.filter(m=>mesta.has(m)),iskustvo,opis};
   if($('pKats'))x.kategorije=kategorije;
-  if($('pMesto'))x.mesto=$('pMesto').value.trim().replace(/\s+/g,' ');
+  const odakle=$('pMesto').value.trim().replace(/\s+/g,' ');
+  // U javnoj prijavi mesto se šalje samo ako je upisano (nije obavezno)
+  if(odakle||$('pKats'))x.mesto=odakle;
   return [x,g]}}
 
 // Obaveštenje adminu preko Netlify Forms; ako ne uspe, prijava je svejedno u bazi
@@ -847,7 +849,7 @@ function admin(nav){
  const majstori=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr'));
  const prijavaKartica=(p,odbijena)=>`<div class="ac ${odbijena?'off':''}"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
   <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${p.iskustvo} god. iskustva · ${esc(fmtTel(p.telefon))}</div>
-  <div class="m">${esc((p.mesta||[]).join(', '))}</div><div class="m">${esc(p.email||'')}</div>
+  <div class="m">${p.mesto?'Iz: '+esc(p.mesto)+' · ':''}Radi u: ${esc((p.mesta||[]).join(', '))}</div><div class="m">${esc(p.email||'')}</div>
   <p>${esc(p.opis)}</p>
   <div class="ab">${telLink(p.telefon)}${odbijena
    ?`<button onclick="adm.vratiPrijavu('${p.uid}')">Vrati na čekanje</button><button class="no" onclick="adm.obrisiPrijavu('${p.uid}')">Obriši</button>`
@@ -1089,7 +1091,7 @@ const adm={
   if(!p.telefon){toast('Prijava nema broj telefona.');return}
   if(!confirm(`Odobriti: ${p.ime}?\nPojaviće se u aplikaciji sa brojem ${p.telefon}.`))return;
   const b=writeBatch(db),mid='u_'+uid;
-  b.set(doc(db,'majstori',mid),{ime:p.ime,kategorija:p.kategorija,mesta:p.mesta,iskustvo:p.iskustvo,opis:p.opis,telefon:p.telefon,aktivan:true,prijava:uid});
+  b.set(doc(db,'majstori',mid),{ime:p.ime,kategorija:p.kategorija,mesta:p.mesta,iskustvo:p.iskustvo,opis:p.opis,telefon:p.telefon,aktivan:true,prijava:uid,...(p.mesto?{mesto:p.mesto}:{})});
   b.update(doc(db,'prijave',uid),{status:'odobren',majstor:mid});
   pokusaj(()=>b.commit(),`${p.ime} je odobren i vidi se u aplikaciji.`)},
  odbij(uid){const p=PR.find(x=>x.uid===uid);if(!p||!confirm(`Odbiti prijavu: ${p.ime}?`))return;

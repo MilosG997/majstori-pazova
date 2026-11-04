@@ -151,6 +151,20 @@ a.btn{text-decoration:none}
 .foot p{margin:0;flex:1;font-size:.9rem}
 .foot p b{display:block;font-size:1rem}
 .foot button{flex:none;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
+.foot.firma{margin-top:10px;background:var(--head);border-color:var(--head);color:var(--headText);text-decoration:none}
+.foot.firma p{opacity:.85}.foot.firma p b{opacity:1}
+.foot .fi{flex:none;width:44px;height:44px;border-radius:10px;background:var(--yellow);display:flex;align-items:center;justify-content:center}
+.foot .fi svg{width:24px;height:24px;stroke:#16264A}
+.foot .str{flex:none;width:20px;height:20px;stroke:currentColor}
+.forma h1{font-size:1.5rem;font-weight:800;font-stretch:108%;line-height:1.15;margin:6px 0 6px}
+.forma .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.btn.tamno{background:var(--head);color:#fff;width:100%}
+.hvala{text-align:center;padding-top:34px}
+.hvala h1{font-size:1.5rem;font-weight:800;margin:0 0 6px}
+.hvala .kv{width:96px;height:96px;border-radius:50%;background:rgba(30,138,78,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.hvala .kv svg{width:52px;height:52px;stroke:var(--green)}
+.hvala .br{display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 18px;font-weight:800;font-size:1.15rem;margin:6px 0 22px}
+.hvala .br svg{width:20px;height:20px;stroke:var(--green)}
 .adm{margin-top:14px}
 .adminTop{position:sticky;top:0;z-index:6;background:var(--head)}
 .adminTop .bar{position:static}
@@ -181,6 +195,13 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 .ab svg{width:16px;height:16px;stroke:currentColor}
 .ab .ok{background:var(--green);border-color:var(--green);color:#fff}
 .ab .no{color:#C0392B}
+.ac.novo{border-left:4px solid #C0392B}
+.badge.pozvan{background:rgba(30,138,78,.15);color:var(--green)}
+.tab .cnt{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:#C0392B;color:#fff;font-size:.7rem;padding:0 5px;margin-left:4px}
+.prek{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sw{appearance:none;-webkit-appearance:none;width:52px;height:30px;border-radius:15px;background:var(--line);position:relative;flex:none;cursor:pointer;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw:checked{background:var(--green)}.sw:checked::after{transform:translateX(22px)}
 .badge{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:5px;background:var(--line);color:var(--text);margin-left:6px;vertical-align:middle}
 .sub2{font-size:.85rem;color:var(--muted);margin:-6px 0 12px}
 
@@ -197,11 +218,11 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 .toggles{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .toggles button{border:1.5px solid var(--line);background:transparent;border-radius:20px;padding:8px 12px;font-size:.88rem}
 .toggles button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
-.sheet label{display:block;font-size:.85rem;font-weight:600;margin:0 0 6px}
-.sheet textarea,.sheet input:not([type=checkbox]),.sheet select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin-bottom:12px;font-size:1rem}
+.sheet label,.forma label{display:block;font-size:.85rem;font-weight:600;margin:0 0 6px}
+.sheet textarea,.sheet input:not([type=checkbox]),.sheet select,.forma input:not([type=checkbox]){width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px;margin-bottom:12px;font-size:1rem}
 .sheet textarea{min-height:90px;resize:vertical}
 .sheet select{height:46px}
-.sheet label.sagl{display:flex;gap:10px;align-items:flex-start;font-weight:500;font-size:.88rem;margin:4px 0 12px}
+.sheet label.sagl,.forma label.sagl{display:flex;gap:10px;align-items:flex-start;font-weight:500;font-size:.88rem;margin:4px 0 12px}
 .sagl input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--green)}
 .status{background:var(--bg);border-radius:12px;padding:14px;margin-bottom:14px;font-size:.92rem}
 .status b{display:block;margin-bottom:4px}
@@ -366,6 +387,7 @@ function dogadjaj(ime,param){if(!gaSpreman||!smeAnalitika())return;try{gtag('eve
 function pregledStrane(){const h=location.hash;let p,naslov='Početna';
  if((p=h.match(/^#\/k\/(\w+)/)))naslov='Kategorija: '+((kat(p[1])||{}).n||p[1]);
  else if((p=h.match(/^#\/m\/([\w-]+)/))){const m=M.find(x=>x.id===p[1]);naslov='Majstor: '+(m?m.n:p[1])}
+ else if(h.startsWith('#/partnerstvo'))naslov='Partnerstvo';
  dogadjaj('page_view',{page_title:naslov,page_location:location.origin+'/'+h.replace(/^#\/?/,'')})}
 function obrisiGaKolacice(){document.cookie.split(';').map(c=>c.split('=')[0].trim()).filter(n=>/^_ga/.test(n)).forEach(n=>{
  [location.hostname,'.'+location.hostname.replace(/^www\./,'')].forEach(d=>{document.cookie=`${n}=; Max-Age=0; path=/; domain=${d}`});
@@ -405,21 +427,27 @@ const uPartnera=d=>{const x=d.data();return{id:d.id,ime:String(x.ime||''),link:S
  boja:String(x.boja||'#F7F4EE'),tekst:String(x.tekst||'#16264A'),red:Number.isInteger(x.redosled)?x.redosled:99,a:x.aktivan===true}};
 const poRedu=(a,b)=>(a.red-b.red)||a.ime.localeCompare(b.ime,'sr');
 onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e));
+// Partnerstvo: podesavanja/partnerstvo.aktivno uključuje prijavu firmi (dokument koji ne postoji = uključeno)
+const PS={ucitano:false,aktivno:false};let PSposlato=null;
+onSnapshot(doc(db,'podesavanja','partnerstvo'),d=>{PS.ucitano=true;PS.aktivno=!d.exists()||d.data().aktivno!==false;osvezi()},
+ e=>{console.error(e);PS.ucitano=true;PS.aktivno=false;osvezi()});
 
 // ---------- Prijava ----------
 // Admin podaci (sve prijave i svi majstori, i sakriveni) učitavaju se samo za administratora
-let AM=[],PR=[],DO=[],BL=new Set(),adminOdjava=[];
+let AM=[],PR=[],DO=[],PP=[],BL=new Set(),adminOdjava=[];
 let jaBlokiran=false;
 function promenaNaloga(u){user=u;
  pisiLS('mp_nalog',u?'1':null); // sledeći put se Auth učitava odmah (da prijavljen korisnik ostane prijavljen)
  if(jeAdmin()){pisiLS('mp_admin_uredjaj','1');window['ga-disable-'+GA_ID]=true}
- adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];AP=[];BL=new Set();KR=null;krGreska='';jaBlokiran=false;
+ adminOdjava.forEach(f=>f());adminOdjava=[];AM=[];PR=[];DO=[];PP=[];AP=[];BL=new Set();KR=null;krGreska='';jaBlokiran=false;
  // Blokiran korisnik: aplikacija mu kaže unapred (baza ga ionako odbija)
  if(u&&!jeAdmin())getDoc(doc(db,'blokirani',u.uid)).then(d=>{jaBlokiran=d.exists()}).catch(()=>{});
  if(jeAdmin()){
   adminOdjava.push(onSnapshot(collection(db,'majstori'),s=>{AM=s.docs.map(uMajstora);osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'blokirani'),s=>{BL=new Set(s.docs.map(d=>d.id));osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'partneri'),s=>{AP=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e)));
+  adminOdjava.push(onSnapshot(collection(db,'partnerPrijave'),s=>{PP=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});
+   return{id:d.id,ime:String(x.ime||''),firma:String(x.firma||''),telefon:String(x.telefon||''),status:x.status==='pozvan'?'pozvan':'novo',v:x.kreirano?x.kreirano.toMillis():Date.now()}}).sort((a,b)=>b.v-a.v);osvezi()},e=>console.error(e)));
   adminOdjava.push(onSnapshot(collection(db,'prijave'),s=>{PR=s.docs.map(d=>{const x=d.data({serverTimestamps:'estimate'});return{...x,uid:d.id,v:x.vreme?x.vreme.toMillis():Date.now()}});osvezi()},e=>console.error(e)));
   // Dojave: majstori/{mid}/ocene/{ruid}/dojave/{ko je prijavio}
   adminOdjava.push(onSnapshot(collectionGroup(db,'dojave'),s=>{DO=s.docs.map(d=>({ref:d.ref,ruid:d.ref.parent.parent.id,mid:d.ref.parent.parent.parent.parent.id}));osvezi()},e=>console.error(e)));
@@ -565,7 +593,8 @@ function mojNalog(){if(!user)return;
 const naCekanju=()=>PR.filter(p=>p.status==='na_cekanju');
 // Prijavljene recenzije grupisane po recenziji: [{mid,ruid,broj,refs}]
 const prijavljene=()=>{const g={};DO.forEach(d=>{const k=d.mid+'/'+d.ruid;(g[k]=g[k]||{mid:d.mid,ruid:d.ruid,refs:[]}).refs.push(d.ref)});return Object.values(g)};
-const zaAdmina=()=>naCekanju().length+prijavljene().length;
+const noviPartneri=()=>PP.filter(p=>p.status==='novo').length;
+const zaAdmina=()=>naCekanju().length+prijavljene().length+noviPartneri();
 const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onclick="location.hash='#/admin'">Admin${zaAdmina()?` (${zaAdmina()})`:''}</button> · `:''}<button class="lnk" onclick="mojNalog()" title="Moj nalog">${esc(kratkoIme(user.displayName)||user.email)}</button> · ${user.emailVerified?'':'<button class="lnk" onclick="prijava()">Potvrdi email</button> · '}<button class="lnk" onclick="odjava()">Odjavi se</button>`:`<button class="lnk" onclick="prijava()">Prijavi se</button>`}</span>`;
 
 
@@ -607,6 +636,7 @@ function teloPocetne(){
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
    ${partneriHtml()}
    <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
+   ${PS.ucitano&&PS.aktivno?`<a class="foot firma" href="#/partnerstvo"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0Z"/></svg></span><p><b>Firma si?</b>Prijavi se za partnerstvo</p><svg class="str" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>`:''}
    <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>
    <p class="legal mg"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3fd0"/><stop offset="1" stop-color="#59c3ff"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#mgG)"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="16" fill="#fff">MG</text></svg>Napravio <a href="https://mechanicallygifted.rs" target="_blank" rel="noopener">Mechanically Gifted</a></p>`;
  }
@@ -638,6 +668,49 @@ function kategorija(id,nav){const k=kat(id);if(!k)return home();
  <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
  ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora u kategoriji „${k.n}“${mesto?' za mesto '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
  </main>`;if(nav)scrollTo(0,0)}
+
+// ---------- Partnerstvo: prijava firmi (bez naloga) ----------
+function partnerstvo(nav){
+ const mod=!PS.ucitano?'cek':PSposlato?'hvala':PS.aktivno?'forma':'zatvoreno';
+ if(app.dataset.v==='p-'+mod)return;app.dataset.v='p-'+mod;
+ const bar=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Partnerstvo</div></div>`;
+ const nazad=`<button class="btn tamno" onclick="location.hash='#/'">Nazad na početnu</button>`;
+ if(mod==='cek'){app.innerHTML=bar+'<main><div class="empty">Učitavam…</div></main>';return}
+ if(mod==='zatvoreno'){app.innerHTML=bar+`<main><div class="empty">Trenutno su sva partnerska mesta popunjena. Hvala na interesovanju!</div><div style="height:14px"></div>${nazad}</main>`;if(nav)scrollTo(0,0);return}
+ if(mod==='hvala'){app.innerHTML=bar+`<main class="hvala"><div class="kv"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div>
+  <h1>Hvala na prijavi!</h1><p class="sub2" style="margin:0">Javićemo vam se uskoro na broj:</p><div class="br">${svg('phone')}${esc(PSposlato)}</div>${nazad}</main>`;scrollTo(0,0);return}
+ app.innerHTML=bar+`<main class="forma"><h1>Postani partner Majstori Pazova</h1>
+ <p class="sub2" style="margin:0 0 16px">Ostavi podatke i javićemo ti se telefonom da se dogovorimo.</p>
+ <label for="ppIme">Ime i prezime</label><input id="ppIme" maxlength="80" autocomplete="name">
+ <label for="ppFirma">Naziv firme</label><input id="ppFirma" maxlength="80" autocomplete="organization">
+ <label for="ppTel">Broj telefona</label><input id="ppTel" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="npr. 064 123 4567">
+ <div class="hp" aria-hidden="true"><label for="ppSajt">Sajt</label><input id="ppSajt" tabindex="-1" autocomplete="off"></div>
+ <label class="sagl"><input type="checkbox" id="ppSag"><span>Slažem se da me kontaktirate na ovaj broj u vezi partnerstva.</span></label>
+ <div class="err" id="ppErr" role="alert"></div>
+ <button class="btn green" id="ppOk" style="width:100%">Pošalji zahtev</button>
+ <p class="sub2" style="margin:14px 0 0">Podaci se koriste samo da bismo te kontaktirali u vezi partnerstva (<a href="privatnost.html" style="color:inherit">politika privatnosti</a>).</p></main>`;
+ const $=id=>document.getElementById(id),err=$('ppErr'),ok=$('ppOk');
+ app.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{err.textContent=''}));
+ ok.onclick=async()=>{
+  const cist=v=>v.trim().replace(/\s+/g,' ');
+  const ime=cist($('ppIme').value),firma=cist($('ppFirma').value),tel=cist($('ppTel').value),cifre=tel.replace(/[\s-]/g,'');
+  let g='';
+  if(ime.length<2||ime.length>80)g='Upiši ime i prezime (2–80 znakova).';
+  else if(firma.length<2||firma.length>80)g='Upiši naziv firme (2–80 znakova).';
+  else if(!/^\+?[0-9 -]+$/.test(tel)||!/^(\+381|0)[0-9]+$/.test(cifre)||cifre.replace('+','').length<8||cifre.replace('+','').length>15)g='Upiši ispravan broj telefona, npr. 064 123 4567 ili +381 64 123 4567.';
+  else if(!$('ppSag').checked)g='Potvrdi da možemo da te kontaktiramo na ovaj broj.';
+  if(g){err.textContent=g;return}
+  // Najviše jedna prijava na 10 minuta sa istog uređaja
+  if(Date.now()-(Number(citajLS('mp_partner_t'))||0)<6e5){err.textContent='Prijava je već poslata sa ovog uređaja. Možeš ponovo za nekoliko minuta.';return}
+  ok.disabled=true;ok.textContent='Šaljem…';err.textContent='';
+  if($('ppSajt').value){PSposlato=tel;osvezi();return} // popunjeno skriveno polje = robot: tiho odbij
+  try{
+   await setDoc(doc(collection(db,'partnerPrijave')),{ime,firma,telefon:tel,saglasnost:true,status:'novo',kreirano:serverTimestamp()});
+   pisiLS('mp_partner_t',String(Date.now()));
+   dogadjaj('partner_prijava');
+   PSposlato=tel;osvezi();
+  }catch(e){console.error(e);err.textContent='Nešto nije u redu, pokušaj ponovo.';ok.disabled=false;ok.textContent='Pošalji zahtev'}};
+ if(nav)scrollTo(0,0)}
 
 function profil(id,nav){const m=M.find(x=>x.id===id);
  if(!m){if(!ucitano)return ucitavam();return home()}
@@ -771,6 +844,7 @@ async function upisSe(){
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
 function admin(nav){
  if(jeAdmin()&&adminTab()==='korisnici')return adminKorisnici(nav);
+ if(jeAdmin()&&adminTab()==='partneri')return adminPartnerstvo(nav);
  if(!jeAdmin()){app.dataset.v='';app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
   <main><div class="empty">Ova stranica je samo za administratora.${user?'':'<div class="adm"><button class="btn yellow" onclick="prijava()">Prijavi se</button></div>'}</div></main>`;return}
  const cek=naCekanju().sort((a,b)=>a.v-b.v),odb=PR.filter(p=>p.status==='odbijen'),odo=PR.filter(p=>p.status==='odobren');
@@ -816,10 +890,24 @@ function admin(nav){
  </main>`;if(nav)scrollTo(0,0)}
 
 // ---------- Admin: tabovi i sekcija Korisnici ----------
-const adminTab=()=>location.hash.startsWith('#/admin/korisnici')?'korisnici':'majstori';
-function adminTabovi(){const t=adminTab(),c=naCekanju().length,d=prijavljene().length;
+const adminTab=()=>location.hash.startsWith('#/admin/korisnici')?'korisnici':location.hash.startsWith('#/admin/partneri')?'partneri':'majstori';
+function adminTabovi(){const t=adminTab(),c=naCekanju().length,d=prijavljene().length,n=noviPartneri();
  return `<a role="tab" href="#/admin" class="tab ${t==='majstori'?'on':''}" aria-selected="${t==='majstori'}">Majstori${c?` (${c})`:''}</a>
- <a role="tab" href="#/admin/korisnici" class="tab ${t==='korisnici'?'on':''}" aria-selected="${t==='korisnici'}">Korisnici${d?` (${d})`:''}</a>`}
+ <a role="tab" href="#/admin/korisnici" class="tab ${t==='korisnici'?'on':''}" aria-selected="${t==='korisnici'}">Korisnici${d?` (${d})`:''}</a>
+ <a role="tab" href="#/admin/partneri" class="tab ${t==='partneri'?'on':''}" aria-selected="${t==='partneri'}">Partneri${n?`<span class="cnt" aria-label="${n} novih">${n}</span>`:''}</a>`}
+// Tab "Partneri": prekidač prijave za partnerstvo i prijave firmi (najnovije gore, nove sa crvenom ivicom)
+function adminPartnerstvo(nav){
+ const vreme=v=>new Date(v).toLocaleString('sr-Latn-RS',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ app.innerHTML=`${adminZaglavlje()}
+ <main>
+ <div class="ac prek"><div><b>Prijava za partnerstvo</b><div class="m">${PS.aktivno?'Uključeno: vidi se na sajtu':'Isključeno: sakriveno, mesta su popunjena'}</div></div>
+  <input type="checkbox" class="sw" role="switch" aria-label="Prijava za partnerstvo" ${PS.aktivno?'checked':''} onchange="adm.partnerstvo(this.checked)"></div>
+ <h2 style="margin-top:22px">Prijave firmi<span class="badge">${PP.length}</span></h2>
+ ${PP.length?PP.map(p=>`<div class="ac ${p.status==='novo'?'novo':''}"><div class="h"><b>${esc(p.ime)}</b>${p.status==='pozvan'?'<span class="badge pozvan">POZVAN</span>':''}</div>
+  <div class="m">${esc(p.firma)}</div><div class="m">${esc(fmtTel(p.telefon))} · ${vreme(p.v)}</div>
+  <div class="ab">${telLink(p.telefon.replace(/[\s-]/g,''))}${p.status==='novo'?`<button onclick="adm.pozvanPartner('${p.id}')">✓ Pozvan</button>`:''}<button class="no" onclick="adm.obrisiPartnerPrijavu('${p.id}')">Obriši</button></div></div>`).join('')
+  :'<div class="empty">Još nema prijava firmi.</div>'}
+ </main>`;if(nav)scrollTo(0,0)}
 const adminZaglavlje=()=>`<div class="adminTop"><div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Admin</div></div>
  <nav class="tabs" role="tablist" id="adminTabovi">${adminTabovi()}</nav></div>`;
 
@@ -995,6 +1083,10 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
 
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
+ partnerstvo(da){pokusaj(()=>setDoc(doc(db,'podesavanja','partnerstvo'),{aktivno:da}),da?'Prijava za partnerstvo je uključena.':'Prijava za partnerstvo je isključena.')},
+ pozvanPartner(id){pokusaj(()=>updateDoc(doc(db,'partnerPrijave',id),{status:'pozvan'}),'Označeno: pozvan.')},
+ obrisiPartnerPrijavu(id){const p=PP.find(x=>x.id===id);if(!p||!confirm(`Obriši prijavu: ${p.ime} (${p.firma})?\n\nOva radnja se ne može poništiti.`))return;
+  pokusaj(()=>deleteDoc(doc(db,'partnerPrijave',id)),'Prijava je obrisana.')},
  izmeniPrijavu(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
   izmeniForma('Izmena prijave',p,x=>updateDoc(doc(db,'prijave',uid),x))},
  odobri(uid){const p=PR.find(x=>x.uid===uid);if(!p)return;
@@ -1130,10 +1222,12 @@ document.getElementById('sheetBg').onclick=zatvori;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')zatvori()});
 
 function prikazi(nav){const h=location.hash;let p;
+ if(!h.startsWith('#/partnerstvo'))PSposlato=null;
  if((h.startsWith('#/admin')&&!h.startsWith('#/admin/korisnici'))||/^#\/[km]\//.test(h))app.dataset.v='';
  if(h.startsWith('#/admin'))admin(nav);
  else if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
  else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);
+ else if(h.startsWith('#/partnerstvo'))partnerstvo(nav);
  else home()}
 // Osvežava ekran kad stignu novi podaci, bez skrolovanja i bez gubljenja fokusa u pretrazi
 function osvezi(){prikazi(false)}

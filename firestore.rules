@@ -120,6 +120,37 @@ service cloud.firestore {
         && request.resource.data.aktivan is bool;
     }
 
+    // Partnerstvo: da li je prijava za partnerstvo uključena (čitaju svi, menja samo administrator).
+    // Ako dokument ne postoji, prijava se smatra uključenom.
+    function partnerstvoAktivno() {
+      let put = /databases/$(database)/documents/podesavanja/partnerstvo;
+      return !exists(put) || get(put).data.aktivno == true;
+    }
+
+    match /podesavanja/partnerstvo {
+      allow read: if true;
+      allow create, update: if jeAdmin()
+        && request.resource.data.keys().hasOnly(['aktivno'])
+        && request.resource.data.aktivno is bool;
+      allow delete: if jeAdmin();
+    }
+
+    // Prijave firmi za partnerstvo: šalje se bez naloga, samo kad je partnerstvo uključeno.
+    // Čita, menja (status "pozvan") i briše samo administrator.
+    match /partnerPrijave/{id} {
+      allow create: if partnerstvoAktivno()
+        && request.resource.data.keys().hasOnly(['ime', 'firma', 'telefon', 'saglasnost', 'status', 'kreirano'])
+        && request.resource.data.keys().hasAll(['ime', 'firma', 'telefon', 'saglasnost', 'status', 'kreirano'])
+        && request.resource.data.ime is string && request.resource.data.ime.size() >= 2 && request.resource.data.ime.size() <= 80
+        && request.resource.data.firma is string && request.resource.data.firma.size() >= 2 && request.resource.data.firma.size() <= 80
+        && request.resource.data.telefon is string && request.resource.data.telefon.size() >= 8 && request.resource.data.telefon.size() <= 20
+        && request.resource.data.telefon.matches('^[+]?[0-9 -]+$')
+        && request.resource.data.saglasnost == true
+        && request.resource.data.status == 'novo'
+        && request.resource.data.kreirano == request.time;
+      allow read, update, delete: if jeAdmin();
+    }
+
     // Javno se vide samo aktivni majstori; sakrivene vidi samo administrator
     match /majstori/{mid} {
       allow read: if resource.data.aktivan == true || jeAdmin();

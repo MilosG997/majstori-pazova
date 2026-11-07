@@ -19,7 +19,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
     fetch(req).then(res => {
-      if (res.ok) { const kopija = res.clone(); caches.open(CACHE).then(c => c.put(req, kopija)); }
+      // samo cele odgovore (video se preuzima u delovima, status 206, a takvi se ne mogu sačuvati)
+      if (res.status === 200) { const kopija = res.clone(); caches.open(CACHE).then(c => c.put(req, kopija)); }
       return res;
     }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('/index.html') : Response.error())))
   );

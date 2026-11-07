@@ -27,16 +27,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap"></noscript>
+<link rel="preload" as="image" href="/brand/hero-poster.webp" type="image/webp">
+<link rel="preload" as="image" href="/icons/icon.svg" type="image/svg+xml">
 <style>
 :root{
-  --bg:#EEF1F4;--card:#FFFFFF;--text:#1A2233;--muted:#5B6477;--line:#D8DDE5;
-  --head:#16264A;--headText:#FFFFFF;--yellow:#F2C230;--yellowInk:#3A2C00;--green:#1E8A4E;--star:#E0A800;
+  --bg:#EEF1F7;--card:#FFFFFF;--card2:#F4F6FB;--text:#16264A;--muted:#4A5878;--line:#D8DDE5;
+  --head:#16264A;--headText:#FFFFFF;--yellow:#F2C230;--yellowInk:#16264A;--green:#1E8A4E;--star:#E0A000;
+  /* 3D: "debljina" kartice (tvrda donja senka) i meka senka ispod */
+  --edge:#D6DDEB;--soft:rgba(22,38,74,.35);--hi:#fff;--chipBg:#EAEEF5;--fact:#EEF1F7;
+  --tile:linear-gradient(150deg,#3456A0 0%,#16264A 55%,#0D1838 100%);
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0E1422;--card:#172036;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230;
+  --bg:#0E1422;--card:#172036;--card2:#131B2E;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230;
+  --edge:#070C18;--soft:rgba(0,0,0,.55);--hi:rgba(255,255,255,.06);--chipBg:#22304B;--fact:#0E1422;
 }}
-:root[data-theme="dark"]{--bg:#0E1422;--card:#172036;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230}
+:root[data-theme="dark"]{--bg:#0E1422;--card:#172036;--card2:#131B2E;--text:#E8ECF3;--muted:#9AA3B5;--line:#2A3450;--head:#0A1224;--green:#2BA864;--star:#F2C230;
+  --edge:#070C18;--soft:rgba(0,0,0,.55);--hi:rgba(255,255,255,.06);--chipBg:#22304B;--fact:#0E1422}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
@@ -45,101 +52,160 @@ button{cursor:pointer}
 :focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
 .wrap{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg)}
 
-.top{background:var(--head);color:var(--headText);padding:36px 18px 0;position:relative}
-.brand{display:flex;align-items:center;gap:12px}
-.mark{width:46px;height:46px;border-radius:11px;flex:none;display:block}
-.brand h1{margin:0;font-size:1.55rem;font-weight:800;font-stretch:112%;letter-spacing:-.01em;line-height:1.05}
-.brand p{margin:2px 0 0;font-size:.85rem;opacity:.75}
-.controls{display:grid;gap:10px;margin-top:22px;padding-bottom:18px}
-.field{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:0 12px;height:46px}
-.field svg{width:18px;height:18px;stroke:currentColor;opacity:.7;flex:none}
-.field input,.field select{flex:1;min-width:0;background:transparent;border:0;outline:0;height:100%;color:var(--headText);font-size:1rem}
-.field select option{color:#1A2233}
-.field input::placeholder{color:rgba(255,255,255,.6)}
-.ruler{height:14px;background:var(--yellow);
-  background-image:repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 10px),repeating-linear-gradient(90deg,var(--head) 0 1.5px,transparent 1.5px 50px);
-  background-size:100% 5px,100% 9px;background-repeat:no-repeat;background-position:0 0,0 0}
+/* Zaglavlje početne: slika (poster) odmah, video se uključuje kasnije preko nje (heroVideo) */
+.top{background:#16264A url(/brand/hero-poster.webp) center/cover no-repeat;color:#fff;padding:36px 20px 26px;position:relative;overflow:hidden;isolation:isolate}
+.top .hv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:-2;opacity:0;transition:opacity .8s;pointer-events:none}
+.top .hv.on{opacity:1}
+.top::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(13,24,56,.55),rgba(13,24,56,.85))}
+.brand{display:flex;align-items:center;gap:14px}
+.mark{width:62px;height:62px;border-radius:18px;flex:none;display:block;transform:rotate(-4deg);box-shadow:0 6px 0 #0A1430,0 16px 24px rgba(0,0,0,.45)}
+.brand h1{margin:0;font-size:1.8rem;font-weight:800;letter-spacing:-.03em;line-height:1.05;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.brand h1 span{color:var(--yellow)}
+.brand p{margin:4px 0 0;font-size:.875rem;color:#C9D2E6;font-weight:500}
+.controls{display:grid;gap:8px;margin-top:20px;padding:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:22px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 22px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.field{display:flex;align-items:center;gap:12px;background:#fff;color:#16264A;border-radius:15px;padding:0 8px 0 14px;height:52px;font-weight:600}
+.field svg{width:20px;height:20px;stroke:currentColor;flex:none}
+.field input,.field select{flex:1;min-width:0;background:transparent;border:0;outline:0;height:100%;color:#16264A;font-size:1rem;font-weight:600}
+.field select option{color:#16264A}
+.field input{font-weight:500}
+.field input::placeholder{color:#6B7690}
+.trazi{flex:none;width:40px;height:40px;border-radius:12px;border:0;display:grid;place-items:center;color:#16264A;
+  background:linear-gradient(180deg,#FFD65A,#F2C230);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 4px 0 #D49B00,0 8px 14px rgba(242,194,48,.4)}
+.trazi:active{transform:translateY(3px);box-shadow:0 1px 0 #D49B00}
+.ruler{height:16px;background:var(--yellow);position:relative;box-shadow:0 6px 14px rgba(22,38,74,.25);
+  background-image:repeating-linear-gradient(90deg,#16264A 0 2px,transparent 2px 13px),repeating-linear-gradient(90deg,#16264A 0 2px,transparent 2px 65px);
+  background-size:100% 6px,100% 11px;background-repeat:no-repeat;background-position:0 0,0 0}
+
+/* Tamno zaglavlje strane kategorije i profila */
+.hd{position:relative;overflow:hidden;color:#fff;padding:22px 20px 28px;background:radial-gradient(120% 120% at 90% 0%,#2C4A8C 0%,#16264A 50%,#0D1838 100%)}
+.hd::before{content:"";position:absolute;width:220px;height:220px;right:-60px;top:-50px;border-radius:50%;background:#3F6BD8;filter:blur(50px);opacity:.55}
+.hd>*{position:relative}
+.back.pill{display:inline-flex;align-items:center;gap:6px;font-size:.875rem;font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:8px 14px 8px 10px;border-radius:30px}
+.back.pill svg{width:18px;height:18px;stroke:currentColor}
+.hdRed{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px}
+.hdRed h1{margin:0;font-size:2.25rem;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.hdRed p{margin:4px 0 0;font-size:.875rem;color:#C9D2E6}
+.velika{width:104px;height:104px;border-radius:32px;flex:none;display:grid;place-items:center;background:var(--tile);transform:rotate(8deg);border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.3),inset 0 -4px 0 rgba(0,0,0,.3),0 10px 0 #0A1430,0 26px 40px rgba(0,0,0,.45)}
+.velika svg{width:56px;height:56px;stroke:var(--yellow);filter:drop-shadow(0 3px 0 #9A7400)}
 
 .note{margin:14px 18px 0;font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .note b{background:var(--yellow);color:var(--yellowInk);padding:1px 6px;border-radius:4px;font-weight:700;font-size:.72rem}
 .acct{margin-left:auto;display:inline-flex;gap:6px;align-items:center}
 .lnk{background:none;border:0;padding:4px 0;color:var(--text);font-weight:600;text-decoration:underline;text-underline-offset:2px;font-size:inherit}
 
-main{padding:14px 18px 40px}
-h2{font-size:1.15rem;font-weight:800;font-stretch:108%;margin:10px 0 12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cat{display:flex;flex-direction:column;align-items:flex-start;gap:14px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:118px}
-.cat .ic{width:40px;height:40px;border-radius:10px;background:var(--head);display:grid;place-items:center}
-.cat .ic svg{width:22px;height:22px;stroke:var(--yellow)}
-.cat strong{display:block;font-size:1.02rem;font-weight:700;line-height:1.15}
-.cat span{font-size:.8rem;color:var(--muted)}
-.cat:active{transform:scale(.98)}
+main{padding:14px 16px 40px}
+h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
+.naslov{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:8px 0 14px}
+.naslov h2{margin:0;font-size:1.375rem}
+.naslov span{font-size:.8125rem;color:var(--muted);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cat{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;border:0;border-radius:24px;padding:16px 14px;min-height:150px;
+  background:linear-gradient(165deg,var(--card) 0%,var(--card2) 100%);box-shadow:inset 0 1px 0 var(--hi),0 8px 0 -3px var(--edge),0 20px 30px -14px var(--soft);transition:transform .12s}
+.cat:active{transform:translateY(3px)}
+.cat strong{display:block;font-size:1rem;font-weight:800;line-height:1.15}
+/* Pločica sa ikonicom: tamnoplava kocka sa sjajem gore levo i debljinom ispod */
+.t3{width:66px;height:66px;border-radius:21px;background:var(--tile);display:grid;place-items:center;position:relative;transform:rotate(-5deg);overflow:hidden;flex:none;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.28),inset 0 -3px 0 rgba(0,0,0,.3),0 6px 0 #0A1430,0 16px 22px -6px rgba(13,24,56,.5)}
+.t3::before{content:"";position:absolute;left:6px;top:4px;width:40px;height:22px;border-radius:50%;background:radial-gradient(rgba(255,255,255,.35),transparent 70%)}
+.t3 svg{width:34px;height:34px;stroke:var(--yellow);stroke-width:2.2;position:relative;filter:drop-shadow(0 2px 0 #9A7400)}
+.t3.off{background:linear-gradient(150deg,#8E9AB4,#5E6C8A 60%,#4A5878);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),inset 0 -3px 0 rgba(0,0,0,.2),0 6px 0 #3E4A66,0 16px 22px -6px rgba(13,24,56,.35)}
+.t3.off svg{stroke:#fff;filter:drop-shadow(0 2px 0 #3E4A66)}
+.broj{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:.75rem;font-weight:700;color:var(--muted);background:var(--chipBg);padding:4px 10px 4px 8px;border-radius:20px}
+.broj i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(30,138,78,.2)}
+.broj.z i{background:#9AA4B8;box-shadow:none}
 
 .bar{display:flex;align-items:center;gap:6px;padding:20px 12px 14px;background:var(--head);color:var(--headText);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .back{display:inline-flex;align-items:center;gap:4px;background:transparent;border:0;color:var(--headText);padding:8px 8px;border-radius:8px;font-weight:600}
 .back svg{width:20px;height:20px;stroke:currentColor}
 .bar .t{font-weight:800;font-stretch:108%;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.list{display:grid;gap:10px}
-.item{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 12px 14px}
-.item .info{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0}
-.item .name{font-weight:700;font-size:1.02rem}
-.item .meta{font-size:.82rem;color:var(--muted);margin-top:2px}
-.top1{display:inline-block;margin-top:6px;font-size:.72rem;font-weight:700;background:var(--yellow);color:var(--yellowInk);padding:2px 7px;border-radius:5px}
-.stars{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:.9rem;margin-top:4px}
+.list{display:grid;gap:16px}
+.item{position:relative;display:flex;gap:14px;align-items:center;background:var(--card);border-radius:24px;padding:16px;box-shadow:inset 0 1px 0 var(--hi),0 8px 0 -2px var(--edge),0 20px 30px -14px var(--soft)}
+.item.naj{margin-top:8px}
+.item .info{flex:1;min-width:0;display:flex;gap:14px;align-items:center;text-align:left;background:none;border:0;padding:0}
+.item .txt{flex:1;min-width:0}
+.item .name{display:block;font-weight:800;font-size:1.0625rem}
+.item .meta{display:flex;align-items:center;gap:4px;font-size:.8125rem;color:var(--muted);margin-top:3px;font-weight:500}
+.item .meta svg{width:15px;height:15px;stroke:currentColor;flex:none}
+.av{width:54px;height:54px;border-radius:17px;flex:none;display:grid;place-items:center;font-size:1.19rem;font-weight:800;color:#16264A;
+  background:linear-gradient(160deg,#FFE07E,#F2C230);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 4px 0 #D49B00}
+.av.b{background:linear-gradient(160deg,#DDE5F6,#C4D0EA);box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 4px 0 #A9B7D6}
+.top1{position:absolute;top:-11px;left:18px;display:flex;align-items:center;gap:4px;font-size:.6875rem;font-weight:800;color:#16264A;padding:4px 10px;border-radius:10px;
+  background:linear-gradient(180deg,#FFD65A,#F2C230);box-shadow:0 3px 0 #D49B00}
+.top1 svg{width:13px;height:13px;stroke:currentColor}
+.stars{display:flex;align-items:center;gap:6px;font-weight:800;font-size:.875rem;margin-top:6px}
 .stars i{font-style:normal;color:var(--star);letter-spacing:1px}
-.stars small{color:var(--muted);font-weight:500}
-.call{flex:none;width:52px;height:52px;border-radius:50%;background:var(--green);border:0;display:grid;place-items:center}
-.call svg{width:24px;height:24px;stroke:#fff}
-.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+.stars small{color:var(--muted);font-weight:600;font-size:.75rem}
+.call{flex:none;width:56px;height:56px;border-radius:18px;border:0;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(170deg,#2BB56A,#1E8A4E);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 5px 0 #15703E,0 14px 20px -6px rgba(30,138,78,.55)}
+.call svg{width:26px;height:26px;stroke:#fff}
+.call:active{transform:translateY(3px);box-shadow:0 2px 0 #15703E}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:20px;padding:22px;text-align:center;color:var(--muted)}
 
-.prof{background:var(--head);color:var(--headText);padding:6px 18px 22px}
-.prof h1{margin:0;font-size:1.8rem;font-weight:800;font-stretch:112%;line-height:1.1}
-.prof .kat{display:inline-block;margin:8px 6px 0 0;background:var(--yellow);color:var(--yellowInk);font-weight:700;font-size:.8rem;padding:3px 8px;border-radius:5px}
-.big{display:flex;align-items:baseline;gap:10px;margin-top:16px}
-.big b{font-size:2.6rem;font-weight:800;font-stretch:115%;line-height:1}
-.big i{font-style:normal;color:var(--yellow);font-size:1.2rem;letter-spacing:2px}
-.big small{opacity:.75}
-.facts{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:.92rem}
-.facts li{display:flex;gap:8px}
-.facts span{opacity:.7;min-width:92px}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 18px 0}
-.btn{height:52px;border-radius:12px;border:0;font-weight:700;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+/* Profil majstora */
+.hd.pr{padding-bottom:84px}
+.prRed{display:flex;gap:16px;align-items:center;margin-top:20px}
+.avVel{width:78px;height:78px;border-radius:24px;flex:none;display:grid;place-items:center;font-size:1.75rem;font-weight:800;color:#16264A;background:linear-gradient(160deg,#FFE07E,#F2C230);transform:rotate(-5deg);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.5),0 6px 0 #D49B00,0 18px 30px rgba(0,0,0,.45)}
+.prRed h1{margin:0;font-size:1.75rem;font-weight:800;letter-spacing:-.03em;line-height:1.08}
+.prof-kat{display:inline-flex;align-items:center;margin:8px 6px 0 0;background:rgba(242,194,48,.15);border:1px solid rgba(242,194,48,.5);color:var(--yellow);font-size:.75rem;font-weight:800;padding:5px 10px;border-radius:20px}
+.ocena{position:relative;margin:-60px 16px 0;background:var(--card);border-radius:28px;padding:18px;box-shadow:inset 0 1px 0 var(--hi),0 10px 0 -2px var(--edge),0 26px 40px -16px var(--soft)}
+.big{display:flex;align-items:center;gap:14px}
+.big b{font-size:3.25rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+.big i{display:block;font-style:normal;color:var(--star);font-size:1.25rem;letter-spacing:2px}
+.big small{display:block;color:var(--muted);font-weight:600;font-size:.8125rem;margin-top:2px}
+.big .nema{color:var(--muted);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:16px}
+.fact{background:var(--fact);border-radius:14px;padding:10px 12px;min-width:0}
+.fact.w{grid-column:span 2}
+.fact.w b{font-weight:600}
+.fact small{display:block;font-size:.6875rem;font-weight:800;letter-spacing:1px;color:var(--muted)}
+.fact b{display:block;font-size:.875rem;font-weight:700;margin-top:3px;overflow-wrap:anywhere}
+.actions{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;padding:20px 16px 0}
+.btn{height:52px;border-radius:14px;border:0;font-weight:800;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn svg{width:20px;height:20px;stroke:currentColor}
-.btn.green{background:var(--green);color:#fff}
-.btn.ghost{background:var(--card);border:1.5px solid var(--text);color:var(--text)}
-.btn.yellow{background:var(--yellow);color:var(--yellowInk);width:100%}
+.btn:active:not(:disabled){transform:translateY(3px)}
+.btn.green{background:linear-gradient(170deg,#2BB56A,#1E8A4E);color:#fff;box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 6px 0 #15703E,0 16px 24px -8px rgba(30,138,78,.55)}
+.btn.ghost{background:var(--card);color:var(--text);box-shadow:inset 0 1px 0 var(--hi),0 6px 0 var(--edge),0 16px 24px -12px var(--soft)}
+.btn.ghost svg{stroke:var(--star)}
+.actions .btn{height:58px;border-radius:18px;font-size:1.0625rem}
+.btn.yellow{background:linear-gradient(180deg,#FFD65A,#F2C230);color:#16264A;width:100%;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 5px 0 #D49B00}
 a.btn{text-decoration:none}
 .mejl{font-size:1.1rem;font-weight:700;user-select:all;word-break:break-all}
 .btn.del{background:transparent;color:#C0392B;width:100%;height:44px;margin-top:8px}
 .btn:disabled{opacity:.6;cursor:wait}
-.phone{padding:10px 18px 0;font-size:.85rem;color:var(--muted)}
+.phone{padding:14px 16px 0;font-size:.8125rem;color:var(--muted);text-align:center;font-weight:600}
 
-.sec{padding:22px 18px 0}
-.tags{display:grid;gap:10px}
-.tagrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:.9rem}
-.meter{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.meter div{height:100%;background:var(--green)}
-.rev{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
-.rev .h{display:flex;justify-content:space-between;gap:8px;font-size:.88rem}
-.rev .h b{font-weight:700}
-.rev .h span{color:var(--muted)}
-.rev .s{color:var(--star);letter-spacing:1px;margin:4px 0}
-.rev p{margin:4px 0 0}
-.rev .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chip{font-size:.75rem;border:1px solid var(--line);border-radius:20px;padding:2px 9px;color:var(--muted)}
-.mine{border-color:var(--green)}
-.rev .rep{background:none;border:0;color:var(--muted);font-size:.78rem;padding:8px 0 0;text-decoration:underline;text-underline-offset:2px}
+.sec{padding:24px 16px 0}
+.tags{display:grid;gap:8px}
+.tagrow{background:var(--card);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:8px 10px;font-size:.875rem;font-weight:700;box-shadow:inset 0 1px 0 var(--hi),0 4px 0 var(--edge)}
+.meter{grid-column:1/-1;height:8px;border-radius:5px;background:var(--chipBg);overflow:hidden}
+.meter div{height:100%;border-radius:5px;background:linear-gradient(90deg,#1E8A4E,#3FCB7E)}
+.rev{background:var(--card);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:inset 0 1px 0 var(--hi),0 6px 0 -1px var(--edge),0 16px 26px -14px var(--soft)}
+.rev .h{display:flex;align-items:center;gap:10px}
+.rev .h b{display:block;font-weight:800;font-size:.9375rem}
+.rev .h div span{display:block;color:var(--muted);font-size:.75rem;font-weight:600}
+.ra{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:.875rem;font-weight:800;color:#16264A;background:linear-gradient(160deg,#DDE5F6,#C4D0EA);box-shadow:0 3px 0 #A9B7D6}
+.rev .s{margin-left:auto;color:var(--star);letter-spacing:1px;white-space:nowrap}
+.rev p{margin:10px 0 0;font-size:.9375rem;line-height:1.4}
+.rev .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:.6875rem;font-weight:800;color:var(--green);background:rgba(30,138,78,.12);padding:4px 9px;border-radius:12px}
+.rev.mine{box-shadow:inset 0 0 0 2px var(--green),0 6px 0 -1px var(--edge),0 16px 26px -14px var(--soft)}
+.rev .rep{background:none;border:0;color:var(--muted);font-size:.75rem;font-weight:600;padding:10px 0 0;text-decoration:underline;text-underline-offset:2px}
 .ac.flag{border-color:#C0392B}
 
-.partneri{margin-top:22px}
+.partneri{position:relative;margin-top:30px;border-radius:28px;border:1px solid rgba(255,255,255,.06);padding:20px 16px 18px;color:#fff;overflow:hidden;background:linear-gradient(160deg,#22386A,#16264A 55%,#0D1838);box-shadow:0 22px 40px -14px rgba(13,24,56,.6)}
+.partneri::before{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(rgba(242,194,48,.28),transparent 65%)}
+.partneri>*{position:relative}
 .partneri .ph{display:flex;align-items:center;gap:8px}
-.partneri .ph::before{content:"";width:14px;height:4px;border-radius:2px;background:var(--yellow);flex:none}
-.partneri .ph h2{margin:0;flex:1;font-size:.92rem;color:var(--muted)}
-.partneri .sp{font-size:.66rem;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
-.partneri .pp{margin:3px 0 8px;font-size:.75rem;color:var(--muted)}
-.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.ptile{height:56px;border-radius:10px;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;padding:6px;text-decoration:none;text-align:center;font-weight:700;font-size:.68rem;line-height:1.1;overflow:hidden}
+.partneri .ph svg{width:20px;height:20px;stroke:var(--yellow);flex:none}
+.partneri .ph h2{margin:0;flex:1;font-size:1.19rem;color:#fff}
+.partneri .sp{font-size:.6875rem;font-weight:800;letter-spacing:1.5px;color:var(--yellow);border:1px solid rgba(242,194,48,.45);padding:4px 9px;border-radius:20px}
+.partneri .pp{margin:6px 0 14px;font-size:.8125rem;color:#C3CCE0}
+.pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.ptile{height:58px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:6px;text-decoration:none;text-align:center;font-weight:800;font-size:.7rem;line-height:1.1;overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.5)}
 .ptile img{max-width:100%;max-height:100%;object-fit:contain}
 .ptile:active{transform:scale(.97)}
 .plogo{width:100%;max-width:220px;height:110px;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;margin:0 0 12px;overflow:hidden}
@@ -147,11 +213,18 @@ a.btn{text-decoration:none}
 .boje{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .boje button{width:40px;height:40px;border-radius:10px;border:2px solid var(--line)}
 .boje button[aria-pressed="true"]{border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow)}
-.foot{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
-.foot p{margin:0;flex:1;font-size:.9rem}
-.foot p b{display:block;font-size:1rem}
-.foot button{flex:none;min-width:104px;background:var(--head);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:700}
-.foot+.foot{margin-top:10px}
+.foot{margin-top:28px;border-radius:26px;padding:18px 16px 18px 18px;display:flex;gap:14px;align-items:center;background:var(--card);box-shadow:inset 0 1px 0 var(--hi),0 8px 0 var(--edge),0 22px 30px -12px var(--soft)}
+.foot.zut{background:linear-gradient(150deg,#FFD65A,#F2C230 60%,#EBB51E);color:#16264A;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 0 #D49B00,0 22px 30px -12px rgba(224,168,0,.6)}
+.foot .fi{width:56px;height:56px;border-radius:18px;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#22386A,#16264A);transform:rotate(-6deg);box-shadow:0 6px 0 #0A1430}
+.foot .fi svg{width:28px;height:28px;stroke:var(--yellow)}
+.foot p{margin:0;flex:1;font-size:.8125rem;line-height:1.35;font-weight:500;color:var(--muted)}
+.foot.zut p{color:#3C3418}
+.foot p b{display:block;font-size:1.125rem;font-weight:800;color:var(--text);margin-bottom:3px}
+.foot.zut p b{color:#16264A}
+.foot button{flex:none;min-width:104px;background:var(--green);color:#fff;border:0;border-radius:14px;padding:12px 16px;font-weight:800;font-size:.875rem;box-shadow:0 4px 0 #15703E}
+.foot.zut button{background:#16264A;box-shadow:0 4px 0 #0A1430}
+.foot button:active{transform:translateY(3px);box-shadow:none}
+.foot+.foot{margin-top:20px}
 .forma h1{font-size:1.5rem;font-weight:800;font-stretch:108%;line-height:1.15;margin:6px 0 6px}
 .forma .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .btn.tamno{background:var(--head);color:#fff;width:100%}
@@ -176,8 +249,8 @@ a.btn{text-decoration:none}
 button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .badge.crv{background:#C0392B;color:#fff}
 .badge.zel{background:var(--green);color:#fff}
-.legal{margin:20px 0 0;text-align:center;font-size:.82rem;color:var(--muted)}
-.legal.mg{margin-top:10px}.legal.mg svg{width:20px;height:20px;vertical-align:-5px;margin-right:6px}.legal.mg a{font-weight:700;color:var(--text)}
+.legal{margin:30px 0 0;text-align:center;font-size:.8125rem;color:var(--muted);font-weight:600}
+.legal.mg{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px}.legal.mg svg{width:22px;height:22px;flex:none}.legal.mg a{font-weight:800;color:var(--text)}
 .legal a,.sheet .sub a,.sagl a{color:inherit}
 .ac{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
 .ac.off{opacity:.65}
@@ -255,7 +328,11 @@ const IC={
  pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
  back:'<path d="M15 5 8 12l7 7"/>',
  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
- star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'
+ star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+ strelica:'<path d="M5 12h14M13 18l6-6M13 6l6 6"/>',
+ alat:'<path d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10"/>',
+ firma:'<path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/>',
+ kruna:'<path d="M12 6l4 6 5-4-2 10H5L3 8l5 4z"/>'
 };
 const svg=(k)=>`<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
 
@@ -273,16 +350,38 @@ const KAT=[
  {id:'krov',n:'Krovovi',s:'Krovopokrivač'}
 ];
 function htmlZaglavlja(){return `<header class="top">
-  <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="46" height="46"><div><h1>Majstori Pazova</h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
-  <form class="controls" role="search" autocomplete="off" onsubmit="return false">
+  <video class="hv" muted loop playsinline autoplay preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>
+  <div class="brand"><img class="mark" src="/icons/icon.svg" alt="" width="62" height="62"><div><h1>Majstori <span>Pazova</span></h1><p>Zanatlije iz opštine Stara Pazova</p></div></div>
+  <form class="controls" role="search" autocomplete="off" onsubmit="traziSad();return false">
    <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option>${x}</option>`).join('')}</select></label>
    <label class="field">${svg('search')}<input id="pretragaMajstora" name="pretraga-majstora" type="search" role="searchbox" enterkeyhint="search"
     autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other"
-    placeholder="Traži majstora ili posao, npr. bojler" aria-label="Pretraga"></label>
+    placeholder="Traži majstora ili posao, npr. bojler" aria-label="Pretraga"><button class="trazi" type="submit" aria-label="Traži">${svg('strelica')}</button></label>
   </form></header><div class="ruler"></div>
   <div class="note" id="nalogRed"></div>
   <main id="teloPocetne"><div class="empty">Učitavam majstore…</div></main>`}
+// Dugme sa strelicom i Enter: isto što i kucanje (pretraga se osvežava na svaku promenu), plus skloni tastaturu
+function traziSad(){var q=document.getElementById('pretragaMajstora');if(!q)return;q.blur();q.dispatchEvent(new Event('input'))}
 (function(){var h=location.hash;if(!h||h==='#'||h==='#/'){var a=document.getElementById('app');a.innerHTML=htmlZaglavlja();a.dataset.v='home'}})();
+// Video u zaglavlju: na prvom prikazu samo slika; video tek posle učitavanja strane kad pregledač odmori,
+// i nikad uz smanjeno pokretanje, uštedu podataka ili sporu (2G) vezu. Pauza kad zaglavlje nije na ekranu ili je kartica skrivena.
+var HV={spreman:false,vidljiv:false,io:null};
+function heroVideo(){
+ var v=document.querySelector('.top .hv');if(!HV.spreman||!v||v.dataset.ok)return;
+ var c=navigator.connection||{};
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches||c.saveData||/2g$/.test(c.effectiveType||''))return;
+ v.dataset.ok='1';v.muted=true;
+ v.innerHTML='<source src="/brand/hero.webm" type="video/webm"><source src="/brand/hero.mp4" type="video/mp4">';
+ v.addEventListener('playing',function(){v.classList.add('on')},{once:true});
+ if(HV.io)HV.io.disconnect();
+ HV.vidljiv=false;
+ if('IntersectionObserver' in window){HV.io=new IntersectionObserver(function(e){HV.vidljiv=e[e.length-1].isIntersecting;igrajVideo()});HV.io.observe(v.parentNode)}
+ else{HV.vidljiv=true;igrajVideo()}}
+function igrajVideo(){var v=document.querySelector('.top .hv[data-ok]');if(!v)return;
+ if(HV.vidljiv&&!document.hidden){var p=v.play();if(p&&p.catch)p.catch(function(){})}else v.pause()}
+document.addEventListener('visibilitychange',igrajVideo);
+addEventListener('load',function(){var k=function(){HV.spreman=true;heroVideo()};
+ if('requestIdleCallback' in window)requestIdleCallback(k,{timeout:4000});else setTimeout(k,1500)});
 </script>
 <div class="sheetBg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Prozor aplikacije"></div>
@@ -595,12 +694,14 @@ const nalog=()=>`<span class="acct">${user?`${jeAdmin()?`<button class="lnk" onc
 
 
 // ---------- Prikaz ----------
-function item(m,i){const a=avg(m),n=oceneOd(m).length;
- return `<div class="item"><button class="info" onclick="location.hash='#/m/${m.id}'">
-  <div class="name">${esc(m.n)}</div>
-  <div class="meta">${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}${m.g?`, ${m.g} god. iskustva`:''}</div>
-  <div class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</div>
-  ${i===0&&n&&a>=4.5?'<span class="top1">Najbolje ocenjen</span>':''}
+// Inicijali za pločicu: prva slova prve dve reči imena
+const inicijali=s=>String(s||'').trim().split(/\s+/).slice(0,2).map(w=>w.charAt(0)).join('').toUpperCase()||'?';
+function item(m,i){const a=avg(m),n=oceneOd(m).length,naj=i===0&&n&&a>=4.5;
+ return `<div class="item${naj?' naj':''}">${naj?`<span class="top1">${svg('kruna')}Najbolje ocenjen</span>`:''}<button class="info" onclick="location.hash='#/m/${m.id}'">
+  <span class="av${i===0?'':' b'}" aria-hidden="true">${esc(inicijali(m.n))}</span><span class="txt">
+  <span class="name">${esc(m.n)}</span>
+  <span class="meta">${svg('pin')}${esc(m.r[0]||'')}${m.r.length>1?' i okolina':''}${m.g?` · ${m.g} god.`:''}</span>
+  <span class="stars">${n?`<i>${zv(a)}</i>${fmt(a)} <small>(${n} ${ocenaRec(n)})</small>`:'<small>Još nema ocena</small>'}</span></span>
  </button><button class="call" aria-label="Pozovi ${esc(m.n)}" onclick="pozovi('${m.id}')">${svg('phone')}</button></div>`}
 
 // Polje "Naši partneri": vidi se samo kad postoji bar jedan aktivan partner
@@ -611,7 +712,7 @@ function plocica(x,mesto){const sadrzaj=x.logo?`<img src="${esc(x.logo)}" alt="$
  return l?`<a class="ptile" data-ime="${esc(x.ime)}" style="${stil}" href="${esc(l)}" target="_blank" rel="sponsored noopener noreferrer" aria-label="${esc(x.ime)} (otvara njihov sajt)">${sadrzaj}</a>`
   :`<div class="ptile" style="${stil}">${sadrzaj}</div>`}
 function partneriHtml(){if(!P.length)return'';
- return `<section class="partneri" aria-label="Naši partneri"><div class="ph"><h2>Naši partneri</h2><span class="sp">Sponzor</span></div>
+ return `<section class="partneri" aria-label="Naši partneri"><div class="ph">${svg('firma')}<h2>Naši partneri</h2><span class="sp">SPONZOR</span></div>
  <p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${pozicijePartnera()}</div></section>`}
 // Partner sa pozicijom 1–48 stoji tačno na njoj; bez pozicije ili sa zauzetom pozicijom ide na prvo slobodno mesto
 function pozicijePartnera(){const zauzeto=new Set();
@@ -628,11 +729,11 @@ function teloPocetne(){
   const res=M.filter(m=>uMestu(m)&&(m.n.toLowerCase().includes(q)||m.ks.some(id=>kat(id).n.toLowerCase().includes(q)||kat(id).s.toLowerCase().includes(q))||m.o.toLowerCase().includes(q)||m.mesto.toLowerCase().includes(q))).sort(poOceni);
   body=`<h2>Rezultati pretrage</h2>`+(res.length?`<div class="list">${res.map(m=>item(m,-1)).join('')}</div>`:`<div class="empty">Nema majstora za „${esc(upit)}“${mesto?' u mestu '+esc(mesto):''}. Probaj drugu reč ili izaberi sva mesta.</div>`);
  }else{
-  body=`<h2>Koji majstor ti treba?</h2><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.ks.includes(k.id)&&uMestu(m)).length;
-   return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><div class="ic">${svg(k.id)}</div><div><strong>${k.n}</strong><span>${c} ${c===1?'majstor':'majstora'}</span></div></button>`}).join('')}</div>
+  body=`<div class="naslov"><h2>Koji majstor ti treba?</h2><span>${KAT.length} zanata</span></div><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.ks.includes(k.id)&&uMestu(m)).length;
+   return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><span class="t3${c?'':' off'}">${svg(k.id)}</span><span><strong>${k.n}</strong><span class="broj${c?'':' z'}"><i></i>${c} ${c===1?'majstor':'majstora'}</span></span></button>`}).join('')}</div>
    ${partneriHtml()}
-   <div class="foot"><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
-   ${PS.ucitano&&PS.aktivno?`<div class="foot"><p><b>Firma si?</b>Postani partner i predstavi svoju firmu u aplikaciji.</p><button onclick="location.hash='#/partnerstvo'">Prijavi se</button></div>`:''}
+   <div class="foot zut"><span class="fi" aria-hidden="true">${svg('alat')}</span><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
+   ${PS.ucitano&&PS.aktivno?`<div class="foot"><span class="fi" aria-hidden="true">${svg('firma')}</span><p><b>Firma si?</b>Postani partner i predstavi svoju firmu u aplikaciji.</p><button onclick="location.hash='#/partnerstvo'">Prijavi se</button></div>`:''}
    <p class="legal"><a href="privatnost.html">Politika privatnosti</a> · <a href="mailto:majstoripazova@gmail.com" onclick="kontakt();return false">Kontakt</a></p>
    <p class="legal mg"><svg viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="mgG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3fd0"/><stop offset="1" stop-color="#59c3ff"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#mgG)"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="16" fill="#fff">MG</text></svg>Napravio <a href="https://mechanicallygifted.rs" target="_blank" rel="noopener">Mechanically Gifted</a></p>`;
  }
@@ -642,6 +743,7 @@ function home(){
  if(app.dataset.v!=='home'){
   app.dataset.v='home';
   app.innerHTML=htmlZaglavlja();
+  heroVideo(); // povratak na početnu: novo zaglavlje dobija video (ako je već dozvoljen)
  }
  const sel=document.getElementById('mesto'),qi=document.getElementById('pretragaMajstora');
  // događaji se vezuju jednom po zaglavlju (zaglavlje se crta i pre učitavanja modula)
@@ -660,8 +762,9 @@ const ucitavam=()=>{app.innerHTML=`<main><div class="empty">Učitavam…</div></
 function kategorija(id,nav){const k=kat(id);if(!k)return home();
  if(!ucitano)return ucitavam();
  const list=M.filter(m=>m.ks.includes(id)&&uMestu(m)).sort(poOceni);
- app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button><div class="t">${k.n}</div></div>
- <main><h2>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</h2>
+ app.innerHTML=`<header class="hd"><button class="back pill" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button>
+  <div class="hdRed"><div><h1>${k.n}</h1><p>${list.length} ${list.length===1?'majstor':'majstora'}${mesto?' za '+esc(mesto):' u opštini'}</p></div><span class="velika" aria-hidden="true">${svg(id)}</span></div></header><div class="ruler"></div>
+ <main style="padding-top:30px">
  ${list.length?`<div class="list">${list.map(item).join('')}</div>`:`<div class="empty">Još nema majstora u kategoriji „${k.n}“${mesto?' za mesto '+esc(mesto)+'. Izaberi „Sva mesta“ na početnoj strani da vidiš majstore iz okoline.':'.'}</div>`}
  </main>`;if(nav)scrollTo(0,0)}
 
@@ -712,15 +815,19 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  if(!m){if(!ucitano)return ucitavam();return home()}
  const r=revs(m),a=avg(m),moja=r.find(x=>x.mine);
  const tagStat=TAGOVI.map(t=>({t,c:r.filter(x=>x.tg.includes(t)).length}));
- app.innerHTML=`<div class="bar"><button class="back" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button></div>
- <section class="prof"><h1>${esc(m.n)}</h1>${m.ks.map(id=>`<span class="kat">${kat(id).s}</span>`).join('')}
-  <div class="big">${r.length?`<b>${fmt(a)}</b><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small>`:'<small>Još nema ocena</small>'}</div>
-  <ul class="facts">${m.mesto?`<li><span>Iz</span>${esc(m.mesto)}</li>`:''}<li><span>Radi u</span>${esc(m.r.join(', '))}</li>${m.g?`<li><span>Iskustvo</span>${m.g} ${godRec(m.g)}</li>`:''}<li><span>Radi</span>${esc(m.o)}</li></ul>
+ // Gornji red činjenica: IZ i ISKUSTVO jedno pored drugog; ako postoji samo jedno, zauzima ceo red
+ const gore=[m.mesto?['IZ',esc(m.mesto)]:null,m.g?['ISKUSTVO',`${m.g} ${godRec(m.g)}`]:null].filter(Boolean);
+ const fact=([l,v],w)=>`<div class="fact${w?' w':''}"><small>${l}</small><b>${v}</b></div>`;
+ app.innerHTML=`<header class="hd pr"><button class="back pill" onclick="history.length>1?history.back():location.hash='#/'">${svg('back')}Nazad</button>
+  <div class="prRed"><span class="avVel" aria-hidden="true">${esc(inicijali(m.n))}</span><div><h1>${esc(m.n)}</h1>${m.ks.map(id=>`<span class="prof-kat">${kat(id).s}</span>`).join('')}</div></div></header>
+ <section class="ocena">
+  <div class="big">${r.length?`<b>${fmt(a)}</b><div><i>${zv(a)}</i><small>${r.length} ${ocenaRec(r.length)}</small></div>`:'<span class="nema">Još nema ocena</span>'}</div>
+  <div class="facts">${gore.map(f=>fact(f,gore.length===1)).join('')}${fact(['RADI U',esc(m.r.join(', '))],1)}${fact(['RADI',esc(m.o)],1)}</div>
  </section>
  <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
  <div class="phone">${m.t?'Telefon: '+esc(fmtTel(m.t)):'Broj telefona još nije unet.'}</div>
  ${r.length?`<div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>`:''}
- <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${x.mine?'':`<button class="rep" onclick="prijaviKomentar('${m.id}','${x.uid}')">Prijavi komentar</button>`}</div>`).join('')
+ <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><span class="ra" aria-hidden="true">${esc(inicijali(x.a).charAt(0))}</span><div><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div></div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${x.mine?'':`<button class="rep" onclick="prijaviKomentar('${m.id}','${x.uid}')">Prijavi komentar</button>`}</div>`).join('')
   :'<div class="empty">Još nema ocena. Budi prvi koji će oceniti ovog majstora.</div>'}</div>
  <div style="height:40px"></div>`;if(nav)scrollTo(0,0)}
 

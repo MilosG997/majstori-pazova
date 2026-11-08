@@ -25,7 +25,12 @@
 <meta name="apple-mobile-web-app-title" content="Majstori">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<script>
+// Font: pri prvoj poseti tek posle prikaza zaglavlja (veliki fajl ne sme da uspori prvi prikaz); kasnije odmah, iz keša pregledača
+(function(){var d=false,v=false;function f(){if(d)return;d=true;var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap';document.head.appendChild(l);try{localStorage.setItem('mp_font','1')}catch(e){}}
+try{v=localStorage.getItem('mp_font')==='1'}catch(e){}
+if(v)f();else{requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(f,400)})});setTimeout(f,900)}})();
+</script>
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&display=swap"></noscript>
 <style>
 :root{
@@ -398,7 +403,7 @@ addEventListener('load',function(){var k=function(){HV.spreman=true;heroVideo()}
 <script type="module">
 // Firebase se preuzima tek posle prvog iscrtavanja strane (zaglavlje je već prikazano), da ne odlaže prvi prikaz;
 // sačeka se da se slika zaglavlja stvarno prikaže (LCP). U skrivenoj kartici requestAnimationFrame ne radi, zato i tajmer
-await new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,400)));setTimeout(r,800)});
+await new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,200)));setTimeout(r,500)});
 const [{initializeApp},{getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp}]=await Promise.all([
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]);

@@ -397,8 +397,8 @@ addEventListener('load',function(){var k=function(){HV.spreman=true;heroVideo()}
 
 <script type="module">
 // Firebase se preuzima tek posle prvog iscrtavanja strane (zaglavlje je već prikazano), da ne odlaže prvi prikaz;
-// u skrivenoj kartici requestAnimationFrame ne radi, zato i tajmer
-await new Promise(r=>{requestAnimationFrame(()=>setTimeout(r,0));setTimeout(r,100)});
+// sačeka se da se slika zaglavlja stvarno prikaže (LCP). U skrivenoj kartici requestAnimationFrame ne radi, zato i tajmer
+await new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,150)));setTimeout(r,500)});
 const [{initializeApp},{getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp}]=await Promise.all([
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]);

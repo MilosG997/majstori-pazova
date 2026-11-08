@@ -398,8 +398,8 @@ addEventListener('load',function(){var k=function(){HV.spreman=true;heroVideo()}
 <script type="module">
 // Firebase se preuzima tek posle prvog iscrtavanja strane (zaglavlje je već prikazano), da ne odlaže prvi prikaz;
 // sačeka se da se slika zaglavlja stvarno prikaže (LCP). U skrivenoj kartici requestAnimationFrame ne radi, zato i tajmer
-await new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,300)));setTimeout(r,700)});
-const [{initializeApp},{initializeFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp}]=await Promise.all([
+await new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,150)));setTimeout(r,500)});
+const [{initializeApp},{getFirestore,collection,collectionGroup,query,where,doc,getDoc,getDocs,onSnapshot,setDoc,updateDoc,deleteDoc,deleteField,writeBatch,serverTimestamp}]=await Promise.all([
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'),
  import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]);
 
@@ -416,8 +416,7 @@ const firebaseConfig={
 };
 const ADMIN_EMAIL='milosnpcz97@gmail.com';
 const fb=initializeApp(firebaseConfig);
-// Duge HTTP veze umesto strimovanja: stabilnije na lošim mrežama i bez grešaka isteka veze u konzoli
-const db=initializeFirestore(fb,{experimentalForceLongPolling:true});
+const db=getFirestore(fb);
 // Firebase Auth se učitava tek kad zatreba: klik na „Prijavi se”, ranije prijavljen korisnik ili admin stranica.
 // Posetilac koji samo traži majstora ga ne preuzima (brže na telefonu).
 let FA=null,auth=null,authSpreman=null;

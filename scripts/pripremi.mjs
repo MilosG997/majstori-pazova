@@ -3,7 +3,7 @@ import { rmSync, mkdirSync, cpSync, existsSync } from 'node:fs';
 
 const JAVNO = ['index.html', 'privatnost.html', 'manifest.webmanifest', 'sw.js', 'robots.txt', 'sitemap.xml',
   '_headers', '_redirects', 'icons', 'brand', '.well-known',
-  'favicon.ico', 'favicon-48.png', 'favicon-96.png', 'favicon-192.png'];
+  'favicon.ico', 'favicon-48.png', 'favicon-96.png', 'favicon-192.png', 'og-image-v2.png'];
 
 rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist');

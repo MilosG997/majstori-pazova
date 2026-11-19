@@ -53,7 +53,12 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+/* Bez Android pravougaonika na dodir i bez okvira posle klika; žuti okvir (prati zaobljenje) samo za tastaturu */
+*{-webkit-tap-highlight-color:transparent}
+:focus:not(:focus-visible){outline:none}
+:focus-visible{outline:2px solid #F2C230;outline-offset:2px}
+/* Dodir: element se blago spusti, senka ispod se smanji, rub dobije blag žuti sjaj (sve unutar zaobljenja) */
+.cat,.item,.call,.btn,.foot button,.ptile{transition:transform .12s ease,box-shadow .12s ease}
 .wrap{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg)}
 
 /* Zaglavlje početne: slika (poster) odmah, video se uključuje kasnije preko nje (heroVideo) */
@@ -68,15 +73,12 @@ button{cursor:pointer}
 .brand p{margin:4px 0 0;font-size:.875rem;color:#C9D2E6;font-weight:500;text-shadow:0 1px 10px rgba(13,24,56,.95)}
 .controls{display:grid;gap:8px;margin-top:16px;padding:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:22px;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 22px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
-.field{display:flex;align-items:center;gap:12px;background:#fff;color:#16264A;border-radius:15px;padding:0 8px 0 14px;height:46px;font-weight:600}
+.field{display:flex;align-items:center;gap:12px;background:#fff;color:#16264A;border-radius:15px;padding:0 14px;height:46px;font-weight:600}
 .field svg{width:20px;height:20px;stroke:currentColor;flex:none}
 .field input,.field select{flex:1;min-width:0;background:transparent;border:0;outline:0;height:100%;color:#16264A;font-size:1rem;font-weight:600}
 .field select option{color:#16264A}
 .field input{font-weight:500}
 .field input::placeholder{color:#6B7690}
-.trazi{flex:none;width:40px;height:40px;border-radius:12px;border:0;display:grid;place-items:center;color:#16264A;
-  background:linear-gradient(180deg,#FFD65A,#F2C230);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 4px 0 #D49B00,0 8px 14px rgba(242,194,48,.4)}
-.trazi:active{transform:translateY(3px);box-shadow:0 1px 0 #D49B00}
 .ruler{height:16px;background:var(--yellow);position:relative;box-shadow:0 6px 14px rgba(22,38,74,.25);
   background-image:repeating-linear-gradient(90deg,#16264A 0 2px,transparent 2px 13px),repeating-linear-gradient(90deg,#16264A 0 2px,transparent 2px 65px);
   background-size:100% 6px,100% 11px;background-repeat:no-repeat;background-position:0 0,0 0}
@@ -107,7 +109,7 @@ h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .cat{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;border:0;border-radius:24px;padding:16px 14px;min-height:150px;
   background:linear-gradient(165deg,var(--card) 0%,var(--card2) 100%);box-shadow:inset 0 1px 0 var(--hi),0 8px 0 -3px var(--edge),0 20px 30px -14px var(--soft);transition:transform .12s}
-.cat:active{transform:translateY(3px)}
+.cat:active{transform:translateY(2px) scale(.98);box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 3px 0 -3px var(--edge),0 10px 18px -12px var(--soft)}
 .cat strong{display:block;font-size:1rem;font-weight:800;line-height:1.15}
 /* Pločica sa ikonicom: tamnoplava kocka sa sjajem gore levo i debljinom ispod */
 .t3{width:66px;height:66px;border-radius:21px;background:var(--tile);display:grid;place-items:center;position:relative;transform:rotate(-5deg);overflow:hidden;flex:none;
@@ -132,6 +134,7 @@ h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
 .list{display:grid;gap:16px}
 .item{position:relative;display:flex;gap:14px;align-items:center;background:var(--card);border-radius:24px;padding:16px;box-shadow:inset 0 1px 0 var(--hi),0 8px 0 -2px var(--edge),0 20px 30px -14px var(--soft)}
 .item.naj{margin-top:8px}
+.item:has(.info:active){transform:translateY(2px) scale(.98);box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 3px 0 -2px var(--edge),0 10px 18px -12px var(--soft)}
 .item .info{flex:1;min-width:0;display:flex;gap:14px;align-items:center;text-align:left;background:none;border:0;padding:0}
 .item .txt{flex:1;min-width:0}
 .item .name{display:block;font-weight:800;font-size:1.0625rem}
@@ -149,7 +152,7 @@ h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
 .call{flex:none;width:56px;height:56px;border-radius:18px;border:0;display:grid;place-items:center;color:#fff;
   background:linear-gradient(170deg,#2BB56A,#1E8A4E);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 5px 0 #15703E,0 14px 20px -6px rgba(30,138,78,.55)}
 .call svg{width:26px;height:26px;stroke:#fff}
-.call:active{transform:translateY(3px);box-shadow:0 2px 0 #15703E}
+.call:active{transform:translateY(2px) scale(.98);box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 2px 0 #15703E}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:20px;padding:22px;text-align:center;color:var(--muted)}
 
 /* Profil majstora */
@@ -174,7 +177,9 @@ h2{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
 .actions{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;padding:20px 16px 0}
 .btn{height:52px;border-radius:14px;border:0;font-weight:800;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn svg{width:20px;height:20px;stroke:currentColor}
-.btn:active:not(:disabled){transform:translateY(3px)}
+.btn:active:not(:disabled){transform:translateY(2px) scale(.98)}
+.btn.green:active:not(:disabled){box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 2px 0 #15703E}
+.btn.ghost:active,.btn.yellow:active{box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 2px 0 var(--edge)}
 .btn.green{background:linear-gradient(170deg,#1F9255,#177A43);color:#fff;box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 6px 0 #15703E,0 16px 24px -8px rgba(30,138,78,.55)}
 .btn.ghost{background:var(--card);color:var(--text);box-shadow:inset 0 1px 0 var(--hi),0 6px 0 var(--edge),0 16px 24px -12px var(--soft)}
 .btn.ghost svg{stroke:var(--star)}
@@ -215,7 +220,7 @@ a.btn{text-decoration:none}
 .pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
 .ptile{height:58px;border-radius:14px;display:flex;align-items:center;justify-content:center;padding:6px;text-decoration:none;text-align:center;font-weight:800;font-size:.7rem;line-height:1.1;overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.5)}
 .ptile img{max-width:100%;max-height:100%;object-fit:contain}
-.ptile:active{transform:scale(.97)}
+.ptile:active{transform:translateY(2px) scale(.98);box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 1px 0 rgba(0,0,0,.28)}
 .plogo{width:100%;max-width:220px;height:110px;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;margin:0 0 12px;overflow:hidden}
 .plogo img{max-width:90%;max-height:90%;object-fit:contain}
 .boje{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
@@ -231,7 +236,8 @@ a.btn{text-decoration:none}
 .foot.zut p b{color:#16264A}
 .foot button{flex:none;min-width:104px;background:#177A43;color:#fff;border:0;border-radius:14px;padding:12px 16px;font-weight:800;font-size:.875rem;box-shadow:0 4px 0 #15703E}
 .foot.zut button{background:#16264A;box-shadow:0 4px 0 #0A1430}
-.foot button:active{transform:translateY(3px);box-shadow:none}
+.foot button:active{transform:translateY(2px) scale(.98);box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 1px 0 #15703E}
+.foot.zut button:active{box-shadow:inset 0 0 0 2px rgba(242,194,48,.35),0 1px 0 #0A1430}
 .foot+.foot{margin-top:20px}
 .forma h1{font-size:1.5rem;font-weight:800;font-stretch:108%;line-height:1.15;margin:6px 0 6px}
 .forma .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -337,7 +343,6 @@ const IC={
  back:'<path d="M15 5 8 12l7 7"/>',
  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
- strelica:'<path d="M5 12h14M13 18l6-6M13 6l6 6"/>',
  alat:'<path d="M7 10h3V7L6.5 3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8L7 10"/>',
  firma:'<path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.85M19 21V10.85M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/>',
  kruna:'<path d="M12 6l4 6 5-4-2 10H5L3 8l5 4z"/>'
@@ -364,11 +369,11 @@ function htmlZaglavlja(){return `<header class="top">
    <label class="field">${svg('pin')}<select id="mesto" aria-label="Mesto"><option value="">Sva mesta u opštini</option>${MESTA.map(x=>`<option>${x}</option>`).join('')}</select></label>
    <label class="field">${svg('search')}<input id="pretragaMajstora" name="pretraga-majstora" type="search" role="searchbox" enterkeyhint="search"
     autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other"
-    placeholder="Traži majstora, npr. bojler" aria-label="Pretraga"><button class="trazi" type="submit" aria-label="Traži">${svg('strelica')}</button></label>
+    placeholder="Traži majstora, npr. bojler" aria-label="Pretraga"></label>
   </form></header><div class="ruler"></div>
   <div class="note" id="nalogRed"></div>
   <main id="teloPocetne"><div class="empty">Učitavam majstore…</div></main>`}
-// Dugme sa strelicom i Enter: isto što i kucanje (pretraga se osvežava na svaku promenu), plus skloni tastaturu
+// Enter u pretrazi: isto što i kucanje (pretraga se osvežava na svaku promenu), plus skloni tastaturu
 function traziSad(){var q=document.getElementById('pretragaMajstora');if(!q)return;q.blur();q.dispatchEvent(new Event('input'))}
 (function(){var h=location.hash;if(!h||h==='#'||h==='#/'){var a=document.getElementById('app');a.innerHTML=htmlZaglavlja();a.dataset.v='home'}})();
 // Video u zaglavlju: na prvom prikazu samo slika; video tek posle učitavanja strane kad pregledač odmori,

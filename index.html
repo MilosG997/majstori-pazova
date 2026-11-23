@@ -966,10 +966,9 @@ async function upisSe(){
 
 // ---------- Admin ----------
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
-// Admin: SMS majstoru sa već upisanom porukom (bez kvačica, da stane u oko 3 SMS-a); ✓ = već poslato sa ovog uređaja
-const SMS_PORUKA='Pozdrav, Milos je iz aplikacije Majstori Pazova. Neki imate moj broj od ranije, a nekima pisem prvi put. Hvala vam sto ste deo Majstora Pazova!\nNovo: na vasem profilu sada mogu da stoje slike vasih radova (do 10). Ako imate slike radova, posaljite mi ih ovde, a ja cu ih postaviti.\nAko imate pitanje ili ideju, pisite mi bilo kad.\nPozdrav, Milos - majstoripazova.rs';
+// Admin: SMS majstoru otvara prazan razgovor sa njegovim brojem; ✓ = već otvoreno sa ovog uređaja
 const smsPoslati=()=>{try{return JSON.parse(citajLS('mp_sms_poslato')||'{}')}catch(_){return{}}};
-const smsLink=m=>m.t?`<a href="sms:${esc(m.t)}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent(SMS_PORUKA)}" onclick="adm.smsPoslat('${m.id}')">SMS${smsPoslati()[m.id]?' ✓':''}</a>`:'';
+const smsLink=m=>m.t?`<a href="sms:${esc(m.t)}" onclick="adm.smsPoslat('${m.id}')">SMS${smsPoslati()[m.id]?' ✓':''}</a>`:'';
 const amKartica=m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
   <div class="ab">${telLink(m.t)}${smsLink(m)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`;

@@ -105,6 +105,27 @@ service cloud.firestore {
       allow delete: if jeAdmin();
     }
 
+    // Slike radova majstora (do 10 po majstoru, ograničenje u admin panelu): vide ih svi na profilu,
+    // dodaje i briše samo administrator. Mala sličica (slikeMajstora) i velika slika (slikeVelike) imaju isti ID.
+    match /slikeMajstora/{sid} {
+      allow read: if true;
+      allow delete: if jeAdmin();
+      allow create, update: if jeAdmin()
+        && request.resource.data.keys().hasOnly(['majstor', 'mala', 'red', 'kreirano'])
+        && request.resource.data.majstor is string && request.resource.data.majstor.size() >= 1 && request.resource.data.majstor.size() <= 100
+        && request.resource.data.mala is string && request.resource.data.mala.size() <= 80000
+        && request.resource.data.red is int && request.resource.data.red >= 1 && request.resource.data.red <= 10
+        && request.resource.data.kreirano == request.time;
+    }
+    match /slikeVelike/{sid} {
+      allow read: if true;
+      allow delete: if jeAdmin();
+      allow create, update: if jeAdmin()
+        && request.resource.data.keys().hasOnly(['majstor', 'slika'])
+        && request.resource.data.majstor is string && request.resource.data.majstor.size() >= 1 && request.resource.data.majstor.size() <= 100
+        && request.resource.data.slika is string && request.resource.data.slika.size() <= 750000;
+    }
+
     // Partneri (sponzori): javno se vide samo aktivni; menja ih samo administrator
     match /partneri/{pid} {
       allow read: if resource.data.aktivan == true || jeAdmin();

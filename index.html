@@ -843,9 +843,12 @@ function profil(id,nav){const m=M.find(x=>x.id===id);
  <div class="actions"><button class="btn green" onclick="pozovi('${m.id}')">${svg('phone')}Pozovi</button><button class="btn ghost" onclick="oceni('${m.id}')">${svg('star')}${moja?'Izmeni ocenu':'Oceni'}</button></div>
  <div class="phone">${m.t?'Telefon: '+esc(fmtTel(m.t)):'Broj telefona još nije unet.'}</div>
  ${r.length?`<div class="sec"><h2>Šta kažu mušterije</h2><div class="tags">${tagStat.map(s=>`<div class="tagrow"><span>${s.t}</span><b>${s.c} od ${r.length}</b><div class="meter"><div style="width:${Math.round(s.c/r.length*100)}%"></div></div></div>`).join('')}</div></div>`:''}
+ <div class="sec" id="radovi" hidden></div>
  <div class="sec"><h2>Recenzije</h2>${r.length?r.map(x=>`<div class="rev ${x.mine?'mine':''}"><div class="h"><span class="ra" aria-hidden="true">${esc(inicijali(x.a).charAt(0))}</span><div><b>${esc(x.a)}${x.mine?' (ti)':''}</b><span>${kad(x.v)}</span></div><div class="s">${zv(x.r)}</div></div>${x.c?`<p>${esc(x.c)}</p>`:''}${x.tg.length?`<div class="chips">${x.tg.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}${x.mine?'':`<button class="rep" onclick="prijaviKomentar('${m.id}','${x.uid}')">Prijavi komentar</button>`}</div>`).join('')
   :'<div class="empty">Još nema ocena. Budi prvi koji će oceniti ovog majstora.</div>'}</div>
- <div style="height:40px"></div>`;if(nav)scrollTo(0,0)}
+ <div style="height:40px"></div>`;if(nav)scrollTo(0,0);
+ // Galerija radova iznad recenzija: vidi se samo kod majstora koji imaju slike (kod se preuzima tek na profilu)
+ import('/slike.js').then(s=>s.galerija({id:m.id,db,el:document.getElementById('radovi'),fs:{collection,query,where,getDocs,getDoc,doc}})).catch(e=>console.error(e))}
 
 const OPIS=['','Loše','Slabo','Solidno','Dobro','Odlično'];
 async function oceni(id){const m=M.find(x=>x.id===id);if(!m)return;
@@ -993,7 +996,7 @@ function admin(nav){
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
  ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
-  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
+  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
  ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
  <p class="sub2">„Odveži nalog” briše prijavu (i email sa nje). Majstor ostaje u aplikaciji sa svim podacima, a nalog može ponovo da se prijavi.</p>
  ${odo.map(p=>`<div class="ac"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
@@ -1204,6 +1207,10 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
 
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
+ // Slike radova majstora: kod se preuzima tek na klik (slike.js), da ne opterećuje sajt
+ slike(id){const m=AM.find(x=>x.id===id);if(!m)return;
+  import('/slike.js').then(s=>s.otvori({id,ime:m.n,db,sh,otvoriProzor,toast,esc,fs:{collection,query,where,getDocs,setDoc,deleteDoc,doc,serverTimestamp,writeBatch}}))
+   .catch(e=>{console.error(e);toast('Ne mogu da otvorim slike. Proveri internet vezu.')})},
  partnerstvo(da){pokusaj(()=>setDoc(doc(db,'podesavanja','partnerstvo'),{aktivno:da}),da?'Prijava za partnerstvo je uključena.':'Prijava za partnerstvo je isključena.')},
  pozvanPartner(id){pokusaj(()=>updateDoc(doc(db,'partnerPrijave',id),{status:'pozvan'}),'Označeno: pozvan.')},
  obrisiPartnerPrijavu(id){const p=PP.find(x=>x.id===id);if(!p||!confirm(`Obriši prijavu: ${p.ime} (${p.firma})?\n\nOva radnja se ne može poništiti.`))return;

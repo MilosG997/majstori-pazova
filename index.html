@@ -966,6 +966,23 @@ async function upisSe(){
 
 // ---------- Admin ----------
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
+const amKartica=m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
+  <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
+  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`;
+// Pretraga majstora u adminu: ime, telefon, zanat, mesto; bez obzira na kvačice i ćirilicu
+let amPretraga='',amTajmer=0;
+const CIR={а:'a',б:'b',в:'v',г:'g',д:'d',ђ:'dj',е:'e',ж:'z',з:'z',и:'i',ј:'j',к:'k',л:'l',љ:'lj',м:'m',н:'n',њ:'nj',о:'o',п:'p',р:'r',с:'s',т:'t',ћ:'c',у:'u',ф:'f',х:'h',ц:'c',ч:'c',џ:'dz',ш:'s'};
+const zaPretragu=s=>String(s||'').toLowerCase().replace(/[а-џ]/g,c=>CIR[c]??c).replace(/đ/g,'dj').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const samoCifre=t=>{const c=String(t||'').replace(/\D/g,'');return c.startsWith('381')?'0'+c.slice(3):c};
+function amPrikaziPretragu(){const rez=document.getElementById('amRez'),sve=document.getElementById('amSve');if(!rez||!sve)return;
+ const q=zaPretragu(amPretraga.trim());
+ if(!q){rez.innerHTML='';sve.hidden=false;return}
+ const reci=q.split(/\s+/),cifre=q.replace(/\D/g,'');
+ const nadjeni=[...AM].sort((a,b)=>(b.a-a.a)||a.n.localeCompare(b.n,'sr')).filter(m=>{
+  const t=zaPretragu([m.n,m.mesto,m.r.join(' '),m.ks.map(id=>kat(id).n+' '+kat(id).s).join(' ')].join(' '));
+  return reci.every(w=>t.includes(w))||(cifre.length>=3&&samoCifre(m.t).includes(cifre))});
+ sve.hidden=true;
+ rez.innerHTML=`<h2>Pronađeno<span class="badge">${nadjeni.length}</span></h2>`+(nadjeni.length?nadjeni.map(amKartica).join(''):'<div class="empty">Nema majstora za „'+esc(amPretraga.trim())+'“.</div>')}
 function admin(nav){
  if(jeAdmin()&&adminTab()==='korisnici')return adminKorisnici(nav);
  if(jeAdmin()&&adminTab()==='partneri')return adminPartnerstvo(nav);
@@ -980,9 +997,16 @@ function admin(nav){
   <div class="ab">${telLink(p.telefon)}${odbijena
    ?`<button onclick="adm.vratiPrijavu('${p.uid}')">Vrati na čekanje</button><button class="no" onclick="adm.obrisiPrijavu('${p.uid}')">Obriši</button>`
    :`<button onclick="adm.izmeniPrijavu('${p.uid}')">Izmeni</button><button class="ok" onclick="adm.odobri('${p.uid}')">Odobri</button><button class="no" onclick="adm.odbij('${p.uid}')">Odbij</button>`}</div></div>`;
- // Tab "Majstori": na odobrenju, odobreni majstori, prijave
+ // Tab "Majstori": pretraga, na odobrenju, odobreni majstori, prijave.
+ // Stranica se ponovo crta kad stignu novi podaci: polje za pretragu zadržava tekst i kursor
+ const ae=document.activeElement,fokus=ae&&ae.id==='amTrazi'?[ae.selectionStart,ae.selectionEnd]:null;
  app.innerHTML=`${adminZaglavlje()}
  <main>
+ <form class="krtraka" autocomplete="off" onsubmit="this.querySelector('input').blur();return false">
+  <input id="amTrazi" name="trazi-majstora" type="search" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" enterkeyhint="search" placeholder="Traži majstora: ime, telefon, zanat, mesto" aria-label="Traži majstora">
+ </form>
+ <div id="amRez"></div>
+ <div id="amSve">
  <h2>Na odobrenju<span class="badge">${cek.length}</span></h2>
  ${cek.length?cek.map(p=>prijavaKartica(p,false)).join(''):'<div class="empty">Nema novih prijava.</div>'}
 <div style="height:14px"></div>
@@ -994,16 +1018,20 @@ function admin(nav){
  <p class="sub2" style="margin:8px 0 18px">Majstor koga dodaš odmah je odobren i vidi se u aplikaciji.</p>
  <h2 style="margin-top:28px">Majstori<span class="badge">${majstori.filter(m=>m.a).length} aktivnih</span></h2>
  <p class="sub2">Sakriven majstor se ne vidi u aplikaciji, ali ostaje u bazi zajedno sa ocenama.</p>
- ${majstori.map(m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
-  <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
-  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`).join('')}
+ ${majstori.map(amKartica).join('')}
  ${odo.length?`<h2 style="margin-top:28px">Odobrene prijave<span class="badge">${odo.length}</span></h2>
  <p class="sub2">„Odveži nalog” briše prijavu (i email sa nje). Majstor ostaje u aplikaciji sa svim podacima, a nalog može ponovo da se prijavi.</p>
  ${odo.map(p=>`<div class="ac"><div class="h"><b>${esc(p.ime)}</b><span>${kad(p.v)}</span></div>
   <div class="m">${esc((kat(p.kategorija)||{}).s||'')} · ${esc(fmtTel(p.telefon))}</div><div class="m">Nalog: ${esc(p.email||'')}</div>
   <div class="ab"><button onclick="adm.odvezi('${p.uid}')">Odveži nalog</button></div></div>`).join('')}`:''}
  ${odb.length?`<h2 style="margin-top:28px">Odbijene prijave<span class="badge">${odb.length}</span></h2>${odb.map(p=>prijavaKartica(p,true)).join('')}`:''}
- </main>`;if(nav)scrollTo(0,0)}
+ </div>
+ </main>`;
+ const q=document.getElementById('amTrazi');q.value=amPretraga;
+ q.oninput=()=>{amPretraga=q.value;clearTimeout(amTajmer);amTajmer=setTimeout(amPrikaziPretragu,120)};
+ if(fokus){q.focus();q.setSelectionRange(fokus[0],fokus[1])}
+ amPrikaziPretragu();
+ if(nav)scrollTo(0,0)}
 
 // ---------- Admin: tabovi i sekcija Korisnici ----------
 const adminTab=()=>location.hash.startsWith('#/admin/korisnici')?'korisnici':location.hash.startsWith('#/admin/partneri')?'partneri':'majstori';

@@ -966,9 +966,13 @@ async function upisSe(){
 
 // ---------- Admin ----------
 const telLink=t=>t?`<a href="tel:${esc(t)}">${svg('phone')}Pozovi</a>`:'';
+// Admin: SMS majstoru sa već upisanom porukom (bez kvačica, da stane u oko 3 SMS-a); ✓ = već poslato sa ovog uređaja
+const SMS_PORUKA='Pozdrav, Milos je iz aplikacije Majstori Pazova. Neki imate moj broj od ranije, a nekima pisem prvi put. Hvala vam sto ste deo Majstora Pazova!\nNovo: na vasem profilu sada mogu da stoje slike vasih radova (do 10). Ako imate slike radova, posaljite mi ih ovde, a ja cu ih postaviti.\nAko imate pitanje ili ideju, pisite mi bilo kad.\nPozdrav, Milos - majstoripazova.rs';
+const smsPoslati=()=>{try{return JSON.parse(citajLS('mp_sms_poslato')||'{}')}catch(_){return{}}};
+const smsLink=m=>m.t?`<a href="sms:${esc(m.t)}${/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?'}body=${encodeURIComponent(SMS_PORUKA)}" onclick="adm.smsPoslat('${m.id}')">SMS${smsPoslati()[m.id]?' ✓':''}</a>`:'';
 const amKartica=m=>`<div class="ac ${m.a?'':'off'}"><div class="h"><b>${esc(m.n)}${m.a?'':'<span class="badge">sakriven</span>'}</b><span>${oceneOd(m).length} ${ocenaRec(oceneOd(m).length)}</span></div>
   <div class="m">${esc(m.ks.map(id=>kat(id).s).join(', '))}${m.mesto?' · iz: '+esc(m.mesto):''}</div><div class="m">Radi u: ${esc(m.r.join(', '))}</div><div class="m">${m.t?esc(fmtTel(m.t)):'bez telefona'}</div>
-  <div class="ab">${telLink(m.t)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`;
+  <div class="ab">${telLink(m.t)}${smsLink(m)}<button onclick="adm.izmeniMajstora('${m.id}')">Izmeni</button><button onclick="adm.slike('${m.id}')">Slike</button><button onclick="adm.prikazi('${m.id}',${!m.a})">${m.a?'Sakrij':'Prikaži'}</button>${m.prijava?`<button onclick="adm.odvezi('${m.prijava}','${m.id}')">Odveži nalog</button>`:''}<button class="no" onclick="adm.obrisiMajstora('${m.id}')">Obriši</button></div></div>`;
 // Pretraga majstora u adminu: ime, telefon, zanat, mesto; bez obzira na kvačice i ćirilicu
 let amPretraga='',amTajmer=0;
 const CIR={а:'a',б:'b',в:'v',г:'g',д:'d',ђ:'dj',е:'e',ж:'z',з:'z',и:'i',ј:'j',к:'k',л:'l',љ:'lj',м:'m',н:'n',њ:'nj',о:'o',п:'p',р:'r',с:'s',т:'t',ћ:'c',у:'u',ф:'f',х:'h',ц:'c',ч:'c',џ:'dz',ш:'s'};
@@ -1235,6 +1239,7 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
 
 const pokusaj=async(f,ok)=>{try{await f();if(ok)toast(ok)}catch(e){console.error(e);toast('Nije uspelo. Proveri internet vezu i probaj ponovo.')}};
 const adm={
+ smsPoslat(id){const p=smsPoslati();p[id]=1;pisiLS('mp_sms_poslato',JSON.stringify(p));setTimeout(()=>{admin(false);if(document.getElementById('amRez'))amPrikaziPretragu()},400)},
  // Slike radova majstora: kod se preuzima tek na klik (slike.js), da ne opterećuje sajt
  slike(id){const m=AM.find(x=>x.id===id);if(!m)return;
   import('/slike.js').then(s=>s.otvori({id,ime:m.n,db,sh,otvoriProzor,toast,esc,fs:{collection,query,where,getDocs,setDoc,deleteDoc,doc,serverTimestamp,writeBatch}}))

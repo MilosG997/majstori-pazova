@@ -1586,12 +1586,10 @@ function kalkStrana(id,nav){const k=KALK.find(x=>x.id===id);if(!k)return kalkLis
  if(nav)scrollTo(0,0)}
 
 function kRez(k){const v=kv(k),R=k.calc(v);
- const tekst=`Spisak materijala – ${k.n}\n`+R.map(r=>`• ${r[0]}: ${r[1]}`).join('\n')+`\n\nmajstoripazova.rs/kalkulator`;
  return `<section class="kk-rez"><div class="kk-rh"><small>TVOJ SPISAK</small><h2>Za kupovinu ti treba</h2></div>
   <ol>${R.map((r,i)=>`<li style="animation-delay:${i*70}ms"><span><b>${r[0]}</b>${r[2]?`<small>${r[2]}</small>`:''}</span><em>${r[1]}</em></li>`).join('')}</ol>
   <p class="kk-nap">Okvirne količine po uobičajenoj potrošnji. Pre kupovine proveri sa majstorom i na pakovanju materijala.</p></section>
-  <div class="kk-akc"><button class="btn green" onclick="location.hash='#/k/${k.m}'">${svg('phone')}Nađi ${k.ms}</button>
-  <a class="btn ghost" href="viber://forward?text=${encodeURIComponent(tekst)}">Pošalji spisak na Viber</a></div>
+  <div class="kk-akc"><button class="btn green" onclick="location.hash='#/k/${k.m}'">${svg('phone')}Nađi ${k.ms}</button></div>
   ${P.length?`<section class="partneri kk-par"><div class="ph">${svg('firma')}<h2>Materijal kod partnera</h2></div><p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.slice(0,4).map(x=>plocica(x,0)).join('')}</div></section>`:''}`}
 
 function kRacunaj(id){const k=KALK.find(x=>x.id===id),el=document.getElementById('kkRez');

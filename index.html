@@ -320,6 +320,59 @@ button.ac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cu
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);width:max-content;transition:.2s;z-index:30;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* Kalkulator materijala */
+:root{--kkHero:url(/brand/kalk/hero.webp)}
+.kk-home{margin:28px 0 0}
+.kk-hero{position:relative;display:block;width:100%;text-align:left;border:0;border-radius:26px;overflow:hidden;padding:20px 18px 18px;color:#fff;
+ background:radial-gradient(120% 120% at 90% 0%,#2C4A8C 0%,#16264A 55%,#0D1838 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 0 #0A1430,0 22px 30px -12px rgba(13,24,56,.55)}
+.kk-hero:active{transform:translateY(3px);box-shadow:0 4px 0 #0A1430}
+.kk-bg{position:absolute;inset:0;background:var(--kkHero) right center/cover;opacity:.45;-webkit-mask:linear-gradient(90deg,transparent 0%,#000 70%);mask:linear-gradient(90deg,transparent 0%,#000 70%)}
+.kk-tx{position:relative;display:block;max-width:78%}
+.kk-tx small{display:block;font-size:.6875rem;font-weight:800;letter-spacing:2px;color:var(--yellow)}
+.kk-tx b{display:block;font-size:1.45rem;line-height:1.1;font-weight:900;letter-spacing:-.5px;margin:6px 0 6px}
+.kk-tx span{display:block;font-size:.9rem;opacity:.85;line-height:1.35}
+.kk-ik{position:relative;display:flex;align-items:center;gap:8px;margin:16px 0 16px}
+.kk-ik .t3{width:44px;height:44px;border-radius:14px;box-shadow:inset 0 2px 0 rgba(255,255,255,.28),0 4px 0 #0A1430}
+.kk-ik .t3 svg{width:22px;height:22px}.kk-ik .t3:nth-child(even){transform:rotate(5deg)}
+.kk-ik em{font-style:normal;font-weight:900;font-size:.85rem;color:#1B2340;background:var(--yellow);border-radius:12px;padding:8px 10px}
+.kk-go{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border-radius:16px;font-weight:900;color:#1B2340;font-size:1rem;
+ background:linear-gradient(170deg,#FFD650,#F2C230);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 5px 0 #B58700}
+.kk-top{padding:22px 16px 6px}.kk-top h2{margin:0;font-size:1.5rem;font-weight:900;letter-spacing:-.5px}.kk-top p{margin:6px 0 0;color:var(--muted)}
+.kk-grid{padding:12px 16px 40px}.kk-grid .cat{min-height:140px}.kk-grid small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px;font-weight:600}
+.kk-hd{position:relative;overflow:hidden;color:#fff;padding:18px 20px 60px;background:radial-gradient(120% 120% at 90% 0%,#2C4A8C 0%,#16264A 50%,#0D1838 100%)}
+.kk-hd:after{content:"";position:absolute;inset:0;background:url(/brand/hero-poster.webp) center/cover;opacity:.18;pointer-events:none}
+.kk-hd>*{position:relative;z-index:1}
+.kk-hd .kk-big{width:84px;height:84px;border-radius:26px;margin:18px 0 14px}.kk-hd .kk-big svg{width:42px;height:42px}
+.kk-hd small{display:block;font-size:.6875rem;font-weight:800;letter-spacing:2px;color:var(--yellow)}
+.kk-hd h1{margin:4px 0 2px;font-size:1.9rem;font-weight:900;letter-spacing:-.6px}.kk-hd p{margin:0;opacity:.8}
+.kk-form{margin:-40px 16px 0;position:relative;z-index:2;background:var(--card);border-radius:24px;padding:16px;box-shadow:inset 0 1px 0 var(--hi),0 8px 0 var(--edge),0 22px 30px -16px var(--soft)}
+.kk-f{display:flex;flex-direction:column;gap:7px;padding:8px 0 10px;border-bottom:1px solid var(--line)}
+.kk-l{font-weight:800;font-size:.875rem}
+.kk-num{display:flex;align-items:center;gap:8px}
+.kk-num button{width:48px;height:48px;border:0;border-radius:14px;background:var(--chipBg);color:var(--text);font-size:1.4rem;font-weight:900;box-shadow:0 3px 0 var(--edge)}
+.kk-num input{flex:1;min-width:0;height:48px;border:2px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text);font:inherit;font-size:1.25rem;font-weight:900;text-align:center}
+.kk-num span{font-weight:800;color:var(--muted);min-width:26px}
+.kk-seg{display:flex;gap:6px;flex-wrap:wrap}.kk-seg button{flex:1;height:44px;border:0;border-radius:12px;background:var(--chipBg);color:var(--text);font-weight:800;font-size:.85rem;padding:0 8px;box-shadow:0 3px 0 var(--edge)}
+.kk-seg button.on{background:#16264A;color:#fff;box-shadow:inset 0 0 0 2px var(--yellow),0 3px 0 #0A1430}
+.kk-sw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-weight:800;font-size:.875rem}
+.kk-sw input{display:none}.kk-sw i{width:50px;height:30px;border-radius:20px;background:var(--line);position:relative;transition:.2s}
+.kk-sw i:after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:.2s}
+.kk-sw input:checked+i{background:#1F9255}.kk-sw input:checked+i:after{left:23px}
+.kk-btn{width:100%;margin-top:16px;color:#1B2340;background:linear-gradient(170deg,#FFD650,#F2C230);box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 6px 0 #B58700,0 16px 24px -8px rgba(242,194,48,.5);font-size:1.0625rem;height:56px;border-radius:18px}
+.kk-load{margin:22px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px;border-radius:24px;background:var(--card)}
+.kk-load .t3{animation:kkSpin 1s ease-in-out infinite}.kk-load i{width:60%;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--yellow),#FFE58A,var(--yellow));background-size:200%;animation:kkBar 1s linear infinite}
+@keyframes kkSpin{50%{transform:rotate(8deg) scale(1.08)}}@keyframes kkBar{to{background-position:-200% 0}}
+.kk-rez{margin:22px 16px 0;border-radius:24px;overflow:hidden;background:var(--card);box-shadow:inset 0 1px 0 var(--hi),0 8px 0 var(--edge),0 22px 30px -16px var(--soft)}
+.kk-rh{padding:16px 18px 14px;background:#16264A;color:#fff}.kk-rh small{font-size:.6875rem;font-weight:800;letter-spacing:2px;color:var(--yellow)}.kk-rh h2{margin:3px 0 0;font-size:1.25rem;font-weight:900}
+.kk-rez ol{list-style:none;margin:0;padding:4px 16px}
+.kk-rez li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px dashed var(--line);animation:kkIn .4s both}
+.kk-rez li:last-child{border:0}.kk-rez li b{display:block;font-size:.95rem}.kk-rez li small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px;line-height:1.3}
+.kk-rez li em{font-style:normal;font-weight:900;font-size:.95rem;white-space:nowrap;background:rgba(242,194,48,.18);color:var(--text);padding:7px 10px;border-radius:10px}
+@keyframes kkIn{from{opacity:0;transform:translateY(8px)}}
+.kk-nap{margin:0;padding:12px 18px 16px;font-size:.78rem;color:var(--muted);background:var(--chipBg)}
+.kk-akc{display:grid;gap:10px;margin:18px 16px 0}.kk-akc .btn{width:100%}
+.kk-par{margin:22px 16px 40px}
+.kk-hero{transition:transform .12s ease,box-shadow .12s ease}
 </style>
 </head>
 <body>
@@ -335,6 +388,7 @@ const IC={
  stolar:'<path d="M3 17 17 3l4 4L7 21H3z"/><path d="M8 12l2 2M11 9l2 2M14 6l2 2"/>',
  gips:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M12 3v18"/><path d="M7.5 6.5h.01M16.5 6.5h.01M7.5 12h.01M16.5 12h.01M7.5 17.5h.01M16.5 17.5h.01"/>',
  teski:'<path d="M3 5h18v14H3z"/><path d="M3 10h18M3 15h18M9 5v5M15 10v5M9 15v4"/>',
+ zid:'<path d="M3 5h18v14H3z"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/>',
  klima:'<path d="M12 2v20M3.3 7l17.4 10M20.7 7 3.3 17"/>',
  bravar:'<path d="M6 11h12v10H6z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
  krov:'<path d="M3 12 12 4l9 8"/><path d="M5 10v10h14V10"/>',
@@ -747,6 +801,7 @@ function teloPocetne(){
  }else{
   body=`<div class="naslov"><h2>Koji majstor ti treba?</h2><span>${KAT.length} zanata</span></div><div class="grid">${KAT.map(k=>{const c=M.filter(m=>m.ks.includes(k.id)&&uMestu(m)).length;
    return `<button class="cat" onclick="location.hash='#/k/${k.id}'"><span class="t3${c?'':' off'}">${ikona(k.id,66)}</span><span><strong>${k.n}</strong><span class="broj${c?'':' z'}"><i></i>${c} ${c===1?'majstor':'majstora'}</span></span></button>`}).join('')}</div>
+   ${kalkKartica()}
    ${partneriHtml()}
    <div class="foot zut"><span class="fi" aria-hidden="true">${svg('alat')}</span><p><b>Majstor si?</b>Upiši se besplatno i budi na listi za svoje mesto.</p><button onclick="upisSe()">Upiši se</button></div>
    ${PS.ucitano&&PS.aktivno?`<div class="foot"><span class="fi" aria-hidden="true">${svg('firma')}</span><p><b>Firma si?</b>Postani partner i predstavi svoju firmu u aplikaciji.</p><button onclick="location.hash='#/partnerstvo'">Prijavi se</button></div>`:''}
@@ -1397,8 +1452,157 @@ function prikazi(nav){const h=location.hash;let p;
  else if((p=h.match(/^#\/k\/(\w+)/)))kategorija(p[1],nav);
  else if((p=h.match(/^#\/m\/([\w-]+)/)))profil(p[1],nav);
  else if(h.startsWith('#/partnerstvo'))partnerstvo(nav);
+ else if((p=h.match(/^#\/kalkulator\/([\w-]+)/))){app.dataset.v='';kalkStrana(p[1],nav)}
+ else if(h.startsWith('#/kalkulator')){app.dataset.v='';kalkLista(nav)}
  else home()}
 // Osvežava ekran kad stignu novi podaci, bez skrolovanja i bez gubljenja fokusa u pretrazi
+// ===== Kalkulator materijala =====
+// Nove 3D ikonice iz brand/kalk/<id>.webp (1 = slika postoji; 0 = linijska SVG ikonica kao rezerva)
+const KIMG={beton:1,zid:1,laminat:1,fasada:1,gipszid:1};
+const kIk=(k)=>k.img3d?`<img src="/brand/ikonice/${k.img3d}.webp" alt="" decoding="async">`:KIMG[k.id]?`<img src="/brand/kalk/${k.id}.webp" alt="" decoding="async">`:svg(k.ik);
+const r1=x=>Math.round(x*10)/10, cl=Math.ceil;
+const br=x=>String(r1(x)).replace('.',',');
+const dz=(kg,po=25)=>obl(cl(kg/po),'džak','džaka','džakova');
+const kom=(n,a='kom')=>`${n} ${a}`;
+const pak=(n,j)=>`${n} ${j}`;
+// oblik reči po broju: 1 rolna, 2 rolne, 5 rolni (21 rolna, 22 rolne...)
+const obl=(n,a,b,c,j='')=>`${n} ${n%10===1&&n%100!==11?a:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?b:c}${j}`;
+const KALK=[
+ {id:'plocice',n:'Pločice',s:'Pod ili zid, kupatilo',img3d:'keramika',m:'keramika',ms:'keramičara',
+  polja:[{id:'p',l:'Površina',j:'m²',v:10,st:1},{id:'h',l:'Kupatilo (hidroizolacija)',t:'da',v:1}],
+  calc:v=>{const p=v.p,R=[
+   ['Pločice',`${br(p*1.1)} m²`,'+10% za sečenje i lom'],
+   ['Lepak za pločice',dz(p*4.5),`oko ${br(p*4.5)} kg (4–5 kg po m²)`],
+   ['Fugomasa',pak(cl(p*.5/5),'× 5 kg'),`oko ${br(p*.5)} kg`],
+   ['Podloga (prajmer)',pak(cl(p*.2/5),'× 5 l'),`oko ${br(p*.2)} l`],
+   ['Krstići za fugu',obl(cl(p*25/200),'kesica','kesice','kesica'),'po 200 komada']];
+   if(v.h)R.push(['Hidroizolacija (2 sloja)',pak(cl(p*3/15),'× 15 kg'),`oko ${br(p*3)} kg`]);return R}},
+ {id:'krecenje',n:'Krečenje sobe',s:'Zidovi i plafon',img3d:'krecenje',m:'krecenje',ms:'molera',
+  polja:[{id:'d',l:'Dužina sobe',j:'m',v:4,st:.5},{id:'s',l:'Širina sobe',j:'m',v:3.5,st:.5},{id:'h',l:'Visina',j:'m',v:2.6,st:.1},{id:'n',l:'Broj slojeva',j:'',v:2,st:1}],
+  calc:v=>{const pl=v.d*v.s,z=2*(v.d+v.s)*v.h*.9,a=pl+z;return[
+   ['Površina za krečenje',`${br(a)} m²`,'zidovi bez vrata i prozora + plafon'],
+   ['Boja (disperzija)',obl(cl(a*.15*v.n/15),'kanta','kante','kanti',' × 15 l'),`oko ${br(a*.15*v.n)} l za ${obl(v.n,'sloj','sloja','slojeva')}`],
+   ['Podloga',pak(cl(a*.1/5),'× 5 l'),`oko ${br(a*.1)} l`],
+   ['Papirna traka',obl(cl(2*(v.d+v.s)*2/50),'rolna','rolne','rolni'),'za ivice plafona i lajsne'],
+   ['Najlon za zaštitu poda',obl(cl(pl/20),'rolna','rolne','rolni'),`pod je ${br(pl)} m²`]]}},
+ {id:'glet',n:'Gletovanje',s:'Ravnanje zidova',img3d:'gips',m:'krecenje',ms:'molera',
+  polja:[{id:'p',l:'Površina zidova',j:'m²',v:40,st:1},{id:'n',l:'Broj slojeva',j:'',v:2,st:1}],
+  calc:v=>[['Glet masa',dz(v.p*v.n),`oko ${br(v.p*v.n)} kg (1 kg po m² po sloju)`],
+   ['Podloga',pak(cl(v.p*.1/5),'× 5 l'),`oko ${br(v.p*.1)} l`],
+   ['Brusni papir P120–P180',obl(cl(v.p/8),'list','lista','listova'),'za šmirglanje između slojeva']]},
+ {id:'beton',n:'Betoniranje',s:'Ploča, staza, temelj',ik:'teski',m:'teski',ms:'majstora za beton',
+  polja:[{id:'d',l:'Dužina',j:'m',v:5,st:.5},{id:'s',l:'Širina',j:'m',v:4,st:.5},{id:'t',l:'Debljina',j:'cm',v:12,st:1}],
+  calc:v=>{const V=v.d*v.s*v.t/100*1.05,A=v.d*v.s;return[
+   ['Beton ukupno',`${br(V)} m³`,'+5% rezerve · može i gotov beton iz mešalice'],
+   ['Cement',dz(V*300),`oko ${br(V*300)} kg (300 kg po m³)`],
+   ['Separacija (šljunak 0–31 mm)',`${br(V*1.9)} t`,'kamionom ili u rinfuzu'],
+   ['Armaturna mreža Q188',kom(cl(A*1.15/12.9)),'tabla 2,15 × 6 m, sa preklopom'],
+   ['Najlon ispod betona',`${br(A*1.1)} m²`,''],
+   ['Voda',`${Math.round(V*180)} l`,'oko 180 l po m³']]}},
+ {id:'zid',n:'Zidanje',s:'Blok ili opeka',ik:'zid',m:'teski',ms:'zidara',
+  polja:[{id:'l',l:'Dužina zida',j:'m',v:8,st:.5},{id:'h',l:'Visina zida',j:'m',v:2.6,st:.1},{id:'o',l:'Prozori i vrata',j:'m²',v:3,st:.5},
+   {id:'b',l:'Materijal',t:'izbor',v:0,op:['Blok 19 cm','Porotherm 25 cm','Puna opeka 12 cm']}],
+  calc:v=>{const T=[[19.5,.035,'blok'],[10.5,.045,'blok'],[51,.025,'opeka']][v.b],A=Math.max(0,v.l*v.h-v.o),M=A*T[1];return[
+   ['Površina zida',`${br(A)} m²`,'bez otvora'],
+   [v.b===2?'Opeka':'Blokovi',kom(cl(A*T[0]*1.05)),`oko ${br(T[0])} kom po m² + 5% loma`],
+   ['Malter za zidanje',`${br(M)} m³`,'produžni malter'],
+   ['Cement',dz(M*175),'za malter'],
+   ['Hidratisani kreč',dz(M*90),'za malter'],
+   ['Pesak',`${br(M*1.1)} m³`,'']]}},
+ {id:'laminat',n:'Laminat',s:'Pod u sobi',ik:'stolar',m:'stolar',ms:'majstora za podove',
+  polja:[{id:'d',l:'Dužina sobe',j:'m',v:4,st:.5},{id:'s',l:'Širina sobe',j:'m',v:3.5,st:.5},{id:'k',l:'m² u paketu',j:'m²',v:2.2,st:.1}],
+  calc:v=>{const A=v.d*v.s,o=2*(v.d+v.s),n=cl(A*1.08/v.k);return[
+   ['Laminat',obl(n,'paket','paketa','paketa'),`${br(n*v.k)} m² (+8% za sečenje)`],
+   ['Podloga za laminat',obl(cl(A*1.05/10),'rolna','rolne','rolni',' × 10 m²'),''],
+   ['Parna brana (PE folija)',`${br(A*1.1)} m²`,'na betonsku podlogu'],
+   ['Lajsne 2,5 m',kom(cl(o*1.05/2.5)),`obim sobe ${br(o)} m`],
+   ['Klinovi za dilataciju',obl(1,'kesica','kesice','kesica'),'']]}},
+ {id:'krov',n:'Krov i crep',s:'Prekrivanje krova',img3d:'krov',m:'krov',ms:'krovopokrivača',
+  polja:[{id:'a',l:'Površina krova',j:'m²',v:100,st:5},{id:'l',l:'Dužina slemena',j:'m',v:10,st:.5}],
+  calc:v=>[['Crep',kom(cl(v.a*13*1.05)),'oko 13 kom po m² (zavisi od modela) + 5%'],
+   ['Slemenjaci',kom(cl(v.l*2.6)),'oko 2,6 kom po metru'],
+   ['Krovna folija',obl(cl(v.a*1.1/75),'rolna','rolne','rolni',' × 75 m²'),'paropropusna'],
+   ['Letve 3 × 5 cm',`${Math.round(v.a*3)} m`,''],
+   ['Kontraletve',`${Math.round(v.a*1.3)} m`,''],
+   ['Ekseri / vijci',`oko ${br(v.a*.04)} kg`,'']]},
+ {id:'fasada',n:'Fasada',s:'Stiropor i završni sloj',ik:'krecenje',m:'krecenje',ms:'fasadera',
+  polja:[{id:'a',l:'Površina zidova',j:'m²',v:120,st:5},{id:'t',l:'Stiropor',t:'izbor',v:2,op:['5 cm','8 cm','10 cm']}],
+  calc:v=>{const d=[5,8,10][v.t],pm=.3/(d/100),S=v.a*1.05;return[
+   ['Stiropor '+d+' cm',`${br(S)} m²`,`+5% · oko ${obl(cl(S/pm),'paket','paketa','paketa')} po ${br(pm)} m²`],
+   ['Lepak za stiropor',dz(v.a*9),'lepljenje + armiranje, oko 9 kg po m²'],
+   ['Mrežica',obl(cl(v.a*1.1/50),'rolna','rolne','rolni',' × 50 m²'),''],
+   ['Tiplovi '+(d+6)+' cm',kom(cl(v.a*6)),'6 kom po m²'],
+   ['Podloga za završni sloj',pak(cl(v.a*.25/15),'× 15 kg'),''],
+   ['Završni malter 1,5 mm',obl(cl(v.a*2.5/25),'kanta','kante','kanti',' × 25 kg'),`oko ${br(v.a*2.5)} kg`]]}},
+ {id:'estrih',n:'Estrih',s:'Košuljica za pod',ik:'teski',m:'teski',ms:'majstora za estrih',
+  polja:[{id:'a',l:'Površina poda',j:'m²',v:30,st:1},{id:'t',l:'Debljina',j:'cm',v:5,st:.5},
+   {id:'e',l:'Vrsta estriha',t:'izbor',v:0,op:['Gotov u džaku','Cement i pesak']}],
+  calc:v=>{const kg=v.a*v.t*20,V=v.a*v.t/100;return[
+   ...(v.e===0?[['Gotov estrih u džaku',dz(kg),`oko ${br(kg)} kg (20 kg po m² po cm)`]]
+    :[['Cement',dz(V*320),`oko ${br(V*320)} kg (320 kg po m³)`],['Pesak',`${br(V*1.25)} m³`,'sitan, za estrih']]),
+   ['Ivična traka',`oko ${Math.round(4*Math.sqrt(v.a)*1.1)} m`,'uz zidove'],
+   ['PE folija',`${br(v.a*1.1)} m²`,'']]}},
+ {id:'gipszid',n:'Gips zid',s:'Pregradni zid',ik:'gips',m:'gips',ms:'gipsara',
+  polja:[{id:'l',l:'Dužina zida',j:'m',v:4,st:.5},{id:'h',l:'Visina zida',j:'m',v:2.6,st:.1}],
+  calc:v=>{const A=v.l*v.h;return[
+   ['Gips ploče 120 × 200',kom(cl(A*2*1.05/2.4)),'obe strane, +5%'],
+   ['CW profili '+(v.h<=3?'3 m':'4 m'),kom(cl(v.l/.6)+1),'na svakih 60 cm'],
+   ['UW profili 4 m',kom(cl(v.l*2/4)),'pod i plafon'],
+   ['Kamena vuna 5 cm',`${br(A*1.05)} m²`,'za zvučnu izolaciju'],
+   ['Šrafovi TN 25',obl(cl(A*2*25/1000),'kutija','kutije','kutija',' × 1000'),''],
+   ['Bandaž traka',obl(cl(A*2*1.5/90),'rolna','rolne','rolni',' × 90 m'),''],
+   ['Masa za fugovanje',pak(cl(A*2*.4/5),'× 5 kg'),'']]}}
+];
+const KV={};
+const kv=k=>KV[k.id]||(KV[k.id]=Object.fromEntries(k.polja.map(p=>[p.id,p.v])));
+
+function kalkKartica(){
+ return `<section class="kk-home" aria-label="Kalkulator materijala"><button class="kk-hero" onclick="location.hash='#/kalkulator'">
+  <span class="kk-bg"></span><span class="kk-tx"><small>KALKULATOR MATERIJALA</small><b>Koliko materijala ti treba?</b>
+  <span>Ukucaš kvadraturu, dobiješ spisak za kupovinu.</span></span>
+  <span class="kk-ik">${KALK.slice(0,5).map(k=>`<i class="t3">${kIk(k)}</i>`).join('')}<em>+${KALK.length-5}</em></span>
+  <span class="kk-go">Izračunaj materijal</span></button></section>`}
+
+function kalkLista(nav){
+ app.innerHTML=`<div class="bar"><button class="back" onclick="location.hash='#/'">${svg('back')}Nazad</button><div class="t">Kalkulator materijala</div></div>
+ <div class="kk-top"><h2>Šta radiš? 🧮</h2><p>Izaberi posao, ukucaj mere i dobij okviran spisak materijala.</p></div>
+ <div class="grid kk-grid">${KALK.map(k=>`<button class="cat" onclick="location.hash='#/kalkulator/${k.id}'"><span class="t3">${kIk(k)}</span><span><strong>${k.n}</strong><small>${k.s}</small></span></button>`).join('')}</div>`;
+ if(nav)scrollTo(0,0)}
+
+function kPolje(k,p,v){
+ if(p.t==='da')return `<label class="kk-sw"><span>${p.l}</span><input type="checkbox" ${v[p.id]?'checked':''} onchange="kSet('${k.id}','${p.id}',this.checked?1:0)"><i></i></label>`;
+ if(p.t==='izbor')return `<div class="kk-f"><span class="kk-l">${p.l}</span><div class="kk-seg">${p.op.map((o,i)=>`<button class="${v[p.id]===i?'on':''}" onclick="kSet('${k.id}','${p.id}',${i})">${o}</button>`).join('')}</div></div>`;
+ return `<div class="kk-f"><span class="kk-l">${p.l}</span><div class="kk-num"><button aria-label="Manje" onclick="kKorak('${k.id}','${p.id}',-1)">−</button>
+  <input inputmode="decimal" value="${String(v[p.id]).replace('.',',')}" onchange="kSet('${k.id}','${p.id}',parseFloat(this.value.replace(',','.'))||0)"><span>${p.j}</span>
+  <button aria-label="Više" onclick="kKorak('${k.id}','${p.id}',1)">+</button></div></div>`}
+
+let kGotovo={};
+function kalkStrana(id,nav){const k=KALK.find(x=>x.id===id);if(!k)return kalkLista(nav);const v=kv(k);
+ app.innerHTML=`<header class="kk-hd"><button class="back pill" onclick="location.hash='#/kalkulator'">${svg('back')}Nazad</button>
+  <span class="t3 kk-big">${kIk(k)}</span><small>KALKULATOR MATERIJALA</small><h1>${k.n}</h1><p>${k.s}</p></header>
+ <div class="kk-form">${k.polja.map(p=>kPolje(k,p,v)).join('')}
+  <button class="btn kk-btn" onclick="kRacunaj('${k.id}')">Izračunaj materijal</button></div>
+ <div id="kkRez">${kGotovo[k.id]?kRez(k):''}</div>`;
+ if(nav)scrollTo(0,0)}
+
+function kRez(k){const v=kv(k),R=k.calc(v);
+ const tekst=`Spisak materijala – ${k.n}\n`+R.map(r=>`• ${r[0]}: ${r[1]}`).join('\n')+`\n\nmajstoripazova.rs/kalkulator`;
+ return `<section class="kk-rez"><div class="kk-rh"><small>TVOJ SPISAK</small><h2>Za kupovinu ti treba</h2></div>
+  <ol>${R.map((r,i)=>`<li style="animation-delay:${i*70}ms"><span><b>${r[0]}</b>${r[2]?`<small>${r[2]}</small>`:''}</span><em>${r[1]}</em></li>`).join('')}</ol>
+  <p class="kk-nap">Okvirne količine po uobičajenoj potrošnji. Pre kupovine proveri sa majstorom i na pakovanju materijala.</p></section>
+  <div class="kk-akc"><button class="btn green" onclick="location.hash='#/k/${k.m}'">${svg('phone')}Nađi ${k.ms}</button>
+  <a class="btn ghost" href="viber://forward?text=${encodeURIComponent(tekst)}">Pošalji spisak na Viber</a></div>
+  ${P.length?`<section class="partneri kk-par"><div class="ph">${svg('firma')}<h2>Materijal kod partnera</h2></div><p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.slice(0,4).map(x=>plocica(x,0)).join('')}</div></section>`:''}`}
+
+function kRacunaj(id){const k=KALK.find(x=>x.id===id),el=document.getElementById('kkRez');
+ dogadjaj('kalkulator_izracunaj',{posao:id});
+ el.innerHTML=`<div class="kk-load"><span class="t3">${kIk(k)}</span><b>Računam materijal…</b><i></i></div>`;
+ setTimeout(()=>{kGotovo[id]=1;el.innerHTML=kRez(k);el.scrollIntoView({behavior:'smooth',block:'start'})},900)}
+function kSet(id,p,val){const k=KALK.find(x=>x.id===id);kv(k)[p]=val;const y=scrollY;kalkStrana(id,false);
+ document.querySelectorAll('.kk-rez li').forEach(l=>l.style.animation='none');scrollTo(0,y)}
+function kKorak(id,p,s){const k=KALK.find(x=>x.id===id),f=k.polja.find(x=>x.id===p),v=kv(k);kSet(id,p,Math.max(0,Math.round((v[p]+s*f.st)*10)/10))}
+Object.assign(window,{kRacunaj,kSet,kKorak});
+
 function osvezi(){prikazi(false)}
 
 // Funkcije koje se pozivaju iz onclick="..." moraju biti globalne

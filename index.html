@@ -586,7 +586,7 @@ onSnapshot(collectionGroup(db,'ocene'),s=>{
 // Partneri (sponzori): javno samo aktivni; admin vidi sve
 let P=[],AP=[];
 const uPartnera=d=>{const x=d.data();return{id:d.id,ime:String(x.ime||''),link:String(x.link||''),logo:String(x.logo||''),
- boja:String(x.boja||'#F7F4EE'),tekst:String(x.tekst||'#16264A'),red:Number.isInteger(x.redosled)?x.redosled:99,a:x.aktivan===true}};
+ boja:String(x.boja||'#F7F4EE'),tekst:String(x.tekst||'#16264A'),red:Number.isInteger(x.redosled)?x.redosled:99,a:x.aktivan===true,mat:x.prodavnica===true}};
 const poRedu=(a,b)=>(a.red-b.red)||a.ime.localeCompare(b.ime,'sr');
 onSnapshot(query(collection(db,'partneri'),where('aktivan','==',true)),s=>{P=s.docs.map(uPartnera).sort(poRedu);osvezi()},e=>console.error(e));
 // Partnerstvo: podesavanja/partnerstvo.aktivno uključuje prijavu firmi (dokument koji ne postoji = uključeno)
@@ -1113,7 +1113,7 @@ function adminPartnerstvo(nav){
  <h2 style="margin-top:28px">Partneri na sajtu<span class="badge">${AP.filter(x=>x.a).length} aktivnih</span></h2>
  <p class="sub2">Polje „Naši partneri” se na početnoj strani vidi tek kad je bar jedan partner aktivan. Sakriveni se ne prikazuju.</p>
  <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="adm.partner()">+ Dodaj partnera</button>
- ${AP.map(x=>`<div class="ac ${x.a?'':'off'}"><div class="h"><b>${esc(x.ime)}${x.a?'':'<span class="badge">sakriven</span>'}</b><span>redosled ${x.red}</span></div>
+ ${AP.map(x=>`<div class="ac ${x.a?'':'off'}"><div class="h"><b>${esc(x.ime)}${x.a?'':'<span class="badge">sakriven</span>'}${x.mat?'<span class="badge zel">★ prodaje materijal</span>':''}</b><span>redosled ${x.red}</span></div>
   <div class="m" style="word-break:break-all">${esc(x.link||'bez linka')}</div>
   <div style="display:flex;gap:10px;align-items:center;margin-top:8px"><div class="ptile" style="width:90px;background:${esc(x.boja)};color:${esc(x.tekst)}">${x.logo?`<img src="${esc(x.logo)}" alt="" width="120" height="60">`:esc(x.ime)}</div></div>
   <div class="ab"><button onclick="adm.partner('${x.id}')">Izmeni</button><button onclick="adm.prikaziPartnera('${x.id}',${!x.a})">${x.a?'Sakrij':'Prikaži'}</button><button class="no" onclick="adm.obrisiPartnera('${x.id}')">Obriši</button></div></div>`).join('')}
@@ -1273,6 +1273,7 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
  <label>Boja pločice</label><div class="boje">${BOJE.map(([b,t],i)=>`<button type="button" data-i="${i}" aria-label="Boja ${i+1}" aria-pressed="${b===boja}" style="background:${b}"></button>`).join('')}</div>
  <label for="paRed">Redosled (manji broj = bliže početku)</label><input id="paRed" type="number" inputmode="numeric" min="1" max="99" value="${x.red}">
  <label class="sagl"><input type="checkbox" id="paAkt" ${x.id?(x.a?'checked':''):'checked'}><span>Prikaži na početnoj strani</span></label>
+ <label class="sagl"><input type="checkbox" id="paMat" ${x.mat?'checked':''}><span>★ Prodaje materijal (prikaži u kalkulatoru materijala)</span></label>
  <div class="err" id="err"></div><button class="btn yellow" id="save">${x.id?'Sačuvaj':'Dodaj partnera'}</button>`;
  const $=id=>document.getElementById(id),err=$('err'),save=$('save');
  pregled();$('paIme').oninput=pregled;
@@ -1285,7 +1286,7 @@ function formaPartnera(x){x=x||{boja:BOJE[0][0],tekst:BOJE[0][1],red:(AP.length?
   const g=ime.length<2?'Upiši naziv firme.':link&&!/^https?:\/\/\S+\.\S+/i.test(link)?'Link mora da počne sa https:// (npr. https://metalflex.rs).'
    :!Number.isInteger(red)||red<1||red>99?'Redosled je broj od 1 do 99.':'';
   if(g){err.textContent=g;return}
-  const d={ime,link,logo,boja,tekst,redosled:red,aktivan:$('paAkt').checked};
+  const d={ime,link,logo,boja,tekst,redosled:red,aktivan:$('paAkt').checked,prodavnica:$('paMat').checked};
   save.disabled=true;save.textContent='Čuvam…';
   try{await setDoc(x.id?doc(db,'partneri',x.id):doc(collection(db,'partneri')),d);zatvori();toast(x.id?'Partner je sačuvan.':'Partner je dodat.')}
   catch(e){console.error(e);err.textContent='Čuvanje nije uspelo. Da li su objavljena nova pravila baze?';save.disabled=false;save.textContent=x.id?'Sačuvaj':'Dodaj partnera'}};
@@ -1590,7 +1591,7 @@ function kRez(k){const v=kv(k),R=k.calc(v);
   <ol>${R.map((r,i)=>`<li style="animation-delay:${i*70}ms"><span><b>${r[0]}</b>${r[2]?`<small>${r[2]}</small>`:''}</span><em>${r[1]}</em></li>`).join('')}</ol>
   <p class="kk-nap">Okvirne količine po uobičajenoj potrošnji. Pre kupovine proveri sa majstorom i na pakovanju materijala.</p></section>
   <div class="kk-akc"><button class="btn green" onclick="location.hash='#/k/${k.m}'">${svg('phone')}Nađi ${k.ms}</button></div>
-  ${P.length?`<section class="partneri kk-par"><div class="ph">${svg('firma')}<h2>Materijal kod partnera</h2></div><p class="pp">Lokalne firme koje podržavaju Majstore Pazova</p><div class="pgrid">${P.slice(0,4).map(x=>plocica(x,0)).join('')}</div></section>`:''}`}
+  ${P.some(x=>x.mat)?`<section class="partneri kk-par"><div class="ph">${svg('firma')}<h2>Materijal kod partnera</h2></div><p class="pp">Kod ovih partnera možeš kupiti materijal</p><div class="pgrid">${P.filter(x=>x.mat).map(x=>plocica(x,0)).join('')}</div></section>`:''}`}
 
 function kRacunaj(id){const k=KALK.find(x=>x.id===id),el=document.getElementById('kkRez');
  dogadjaj('kalkulator_izracunaj',{posao:id});

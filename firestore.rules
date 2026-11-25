@@ -131,7 +131,8 @@ service cloud.firestore {
       allow read: if resource.data.aktivan == true || jeAdmin();
       allow delete: if jeAdmin();
       allow create, update: if jeAdmin()
-        && request.resource.data.keys().hasOnly(['ime', 'link', 'logo', 'boja', 'tekst', 'redosled', 'aktivan'])
+        && request.resource.data.keys().hasOnly(['ime', 'link', 'logo', 'boja', 'tekst', 'redosled', 'aktivan', 'prodavnica'])
+        && (!('prodavnica' in request.resource.data) || request.resource.data.prodavnica is bool)
         && request.resource.data.ime is string && request.resource.data.ime.size() >= 2 && request.resource.data.ime.size() <= 40
         && request.resource.data.link is string && request.resource.data.link.size() <= 300
         && (request.resource.data.link == '' || request.resource.data.link.matches('^https?://.+'))
